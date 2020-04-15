@@ -79,7 +79,7 @@ def main():
 
     mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024)
     for i, (captions, _lbl) in enumerate(evalset.get_captions()):
-        mean_txt_embs[i] = txt_encoder(captions.view(-1, *captions.size()[-2:])).mean(dim=-1)
+        mean_txt_embs[i] = txt_encoder(captions.view(-1, *captions.size()[-2:])).mean(dim=0)
 
     corr, outa = 0, 0
     for i, (images, _lbl) in enumerate(evalset.get_images()):
