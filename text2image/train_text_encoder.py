@@ -74,27 +74,30 @@ def main():
                           image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
                           text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn)
 
-    im_encoder = googlenet_feature_extractor()
+    img_encoder = googlenet_feature_extractor().eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
                                     conv_kernels=args.conv_kernels, conv_maxpool=args.conv_maxpool,
                                     rnn_num_layers=args.rnn_num_layers, rnn_bidir=args.rnn_bidir,
                                     conv_dropout=args.conv_dropout, rnn_dropout=args.rnn_dropout,
-                                    rnn_hidden_size=1024 if not args.rnn_bidir else 512)
+                                    rnn_hidden_size=1024 if not args.rnn_bidir else 512).train()
 
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.lr)
 
-    for _ in range(args.batches):
+    for batch in range(args.batches):
+        print(f'Batch {batch+1}')
+
         ims, txts, lbls = trainset.get_next_batch()
-        im_embs = im_encoder(ims)
+        img_embs = img_encoder(ims)
         txt_embs = txt_encoder(txts)
 
-        loss = encoders_loss(im_embs, txt_embs, lbls, batched=False)
+        loss = encoders_loss(img_embs, txt_embs, lbls, batched=False)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+    print('Done training')
 
-    if args.model_fn is not None:
+    if args.model_fn:
         if not os.path.exists(os.path.split(args.model_fn)[0]):
             os.makedirs(os.path.split(args.model_fn)[0])
         torch.save(txt_encoder.state_dict(), args.model_fn)

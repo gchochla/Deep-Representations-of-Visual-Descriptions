@@ -44,7 +44,9 @@ class CUBDataset(torch.utils.data.Dataset):
             alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789 -,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{}'
             self.vocab = {k: i for i, k in enumerate(alphabet)}
             self.vocab['ï'] = self.vocab['i']
-            self.vocab_len = len(self.vocab) - 1 # do not include 'ï'
+            self.vocab['¿'] = self.vocab['?']
+            self.vocab['½'] = self.vocab[' ']
+            self.vocab_len = len(self.vocab) - 3 # do not include 'ï', '¿'
             self.split = list
 
         self.avail_classes = []
@@ -62,7 +64,7 @@ class CUBDataset(torch.utils.data.Dataset):
         self.text_cutoff = text_cutoff
 
     def get_next_batch(self, n_txts=1):
-        '''Get next batch as suggested in
+        '''Get next training batch as suggested in
         `Learning Deep Representations of Fine-Grained Visual Descriptions`, i.e.
         one image with `n_txts` matching descriptions is returned from every class along
         with their labels.'''
@@ -84,12 +86,12 @@ class CUBDataset(torch.utils.data.Dataset):
             rand_txts = torch.randperm(10)[:n_txts] + 1
 
             sample_fn = img_fns[rand_im]
-            text_fn = os.path.splitext(sample_fn)[0] + '.h5'
+            txt_fn = os.path.splitext(sample_fn)[0] + '.h5'
 
             img = Image.open(os.path.join(self.dataset_dir, self.image_dir,
                                           clas, sample_fn)).resize((self.image_px,)*2)
             txtobj = h5py.File(os.path.join(self.dataset_dir, self.text_dir,
-                                            clas, text_fn), 'r')
+                                            clas, txt_fn), 'r')
             for j, rand_txt in enumerate(rand_txts):
                 txt = txtobj['txt' + str(rand_txt.item())]
                 txt = self.process_text(txt)
