@@ -63,6 +63,43 @@ class CUBDataset(torch.utils.data.Dataset):
         self.image_px = img_px
         self.text_cutoff = text_cutoff
 
+    def get_captions(self):
+        '''Creates generator that yields one class' captions at a time in a
+        `torch.Tensor` of size `images`x`10`x`vocabulary_size`x`caption_max_size`.
+        Label is also returned.'''
+
+        for clas in self.avail_classes:
+            lbl = int(clas.split('.')[0])
+
+            txt_fns = os.listdir(os.path.join(self.dataset_dir, self.text_dir, clas))
+            txt_fns = list(filter(lambda s: os.path.splitext(s)[1] == '.h5', txt_fns))
+            clas_txts = torch.empty(len(txt_fns), 10, self.vocab_len, self.text_cutoff)
+
+            for i, txt_fn in enumerate(txt_fns):
+                txtvals = h5py.File(os.path.join(self.dataset_dir, self.text_dir,
+                                              clas, txt_fn), 'r').values()
+                for j, txt in enumerate(txtvals):
+                    clas_txts[i, j] = self.process_text(txt)
+
+            yield clas_txts, lbl
+
+    def get_images(self):
+        '''Creates generator that yields one class' images at a time in a
+        `torch.Tensor`. Label is also returned.'''
+
+        for clas in self.avail_classes:
+            lbl = int(clas.split('.')[0])
+
+            img_fns = os.listdir(os.path.join(self.dataset_dir, self.image_dir, clas))
+            clas_imgs = torch.empty(len(img_fns), 3, self.image_px, self.image_px)
+
+            for i, img_fn in enumerate(img_fns):
+                img = Image.open(os.path.join(self.dataset_dir, self.image_dir,
+                                              clas, img_fn)).resize((self.image_px,)*2)
+                clas_imgs[i] = transforms.ToTensor()(img)
+
+            yield clas_imgs, lbl
+
     def get_next_batch(self, n_txts=1):
         '''Get next training batch as suggested in
         `Learning Deep Representations of Fine-Grained Visual Descriptions`, i.e.
