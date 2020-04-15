@@ -6,7 +6,7 @@ import argparse
 import torch
 import torch.optim as optim
 
-from text2image.utils import CUBDataset, encoders_loss
+from text2image.utils import CUBDataset, encoders_loss, model_name
 from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
 
 def main():
@@ -51,14 +51,14 @@ def main():
     parser.add_argument('-m', '--conv_maxpool', type=int, default=3,
                         help='maxpool parameter')
 
+    parser.add_argument('-rb', '--rnn_bidir', default=False, action='store_true',
+                        help='whether to use bidirectional rnn')
+
     parser.add_argument('-cd', '--conv_dropout', type=float,
                         help='dropout in convolutional layers')
 
     parser.add_argument('-rd', '--rnn_dropout', type=float,
                         help='dropout in lstm cells')
-
-    parser.add_argument('-rb', '--rnn_bidir', default=False, action='store_true',
-                        help='whether to use bidirectional rnn')
 
     parser.add_argument('-b', '--batches', required=True, type=int,
                         help='number of batches')
@@ -66,7 +66,7 @@ def main():
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4,
                         help='learning rate')
 
-    parser.add_argument('-mfn', '--model_fn', type=str, help='where to save model\'s parameters')
+    parser.add_argument('-md', '--model_dir', type=str, help='where to save model\'s parameters')
 
     args = parser.parse_args()
 
@@ -81,7 +81,7 @@ def main():
                                     conv_dropout=args.conv_dropout, rnn_dropout=args.rnn_dropout,
                                     rnn_hidden_size=1024 if not args.rnn_bidir else 512).train()
 
-    optimizer = optim.Adam(txt_encoder.parameters(), lr=args.lr)
+    optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
 
     for batch in range(args.batches):
         print(f'Batch {batch+1}')
@@ -97,10 +97,10 @@ def main():
         optimizer.step()
     print('Done training')
 
-    if args.model_fn:
-        if not os.path.exists(os.path.split(args.model_fn)[0]):
-            os.makedirs(os.path.split(args.model_fn)[0])
-        torch.save(txt_encoder.state_dict(), args.model_fn)
+    if args.model_dir:
+        if not os.path.exists(args.model_dir):
+            os.makedirs(args.model_dir)
+        torch.save(txt_encoder.state_dict(), model_name(args))
 
 if __name__ == '__main__':
     main()

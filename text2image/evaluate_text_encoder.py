@@ -7,7 +7,7 @@ import argparse
 
 import torch
 
-from text2image.utils import CUBDataset, Fvt
+from text2image.utils import CUBDataset, Fvt, hyperparameters, model_name
 from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
 
 def main():
@@ -55,9 +55,18 @@ def main():
     parser.add_argument('-rb', '--rnn_bidir', default=False, action='store_true',
                         help='whether to use bidirectional rnn')
 
-    parser.add_argument('-b', '--batched', type=int, help='batches the model was trained on')
+    parser.add_argument('-cd', '--conv_dropout', type=float,
+                        help='dropout in convolutional layers')
 
-    parser.add_argument('-mfn', '--model_fn', type=str, required=True,
+    parser.add_argument('-rd', '--rnn_dropout', type=float,
+                        help='dropout in lstm cells')
+
+    parser.add_argument('-b', '--batches', type=int, help='batches the model was trained on')
+
+    parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4,
+                        help='learning rate')
+
+    parser.add_argument('-md', '--model_dir', type=str, required=True,
                         help='where to retrieve model\'s parameters')
 
     parser.add_argument('-s', '--summary', type=str, help='where to save resulting metrics')
@@ -75,7 +84,7 @@ def main():
                                     conv_kernels=args.conv_kernels, conv_maxpool=args.conv_maxpool,
                                     rnn_num_layers=args.rnn_num_layers, rnn_bidir=args.rnn_bidir,
                                     rnn_hidden_size=1024 if not args.rnn_bidir else 512).eval()
-    txt_encoder.load_state_dict(torch.load(args.model_fn))
+    txt_encoder.load_state_dict(torch.load(model_name(args)))
 
     mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024)
     for i, (captions, _lbl) in enumerate(evalset.get_captions()):
@@ -88,16 +97,13 @@ def main():
         corr += (preds == i).sum().item()
         outa += len(preds)
 
-    print(f'Accuracy={corr/outa*100:5.2f}%')
+    print(f'Validation set Accuracy={corr/outa*100:5.2f}%')
 
     if args.summary:
         if not os.path.exists(os.path.split(args.summary)[0]):
             os.makedirs(os.path.split(args.summary)[0])
         with open(args.summary, 'a') as fp:
-            fp.write(f'{corr/outa},{args.batches},{args.level},{args.img_px},{args.text_cutoff},' +
-                     f'{args.conv_channels},{args.conv_kernels},{args.conv_maxpool},' +
-                     f'{args.rnn_num_layers},{args.rnn_bidir}')
-
+            fp.write(f'{corr/outa},{hyperparameters(args)}\n')
 
 if __name__ == '__main__':
     main()
