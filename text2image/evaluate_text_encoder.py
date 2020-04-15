@@ -1,4 +1,4 @@
-'''Train text encoder.'''
+'''Evaluate text encoder.'''
 
 # pylint: disable=no-member
 
