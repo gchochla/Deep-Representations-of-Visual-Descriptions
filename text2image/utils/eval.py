@@ -55,7 +55,7 @@ def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
     # size(1) is not concerned with the existence of batch dimension
     # unsqueeze in diagonal to control
     return F.relu(
-        1 - torch.eye(comp.size(1)).to(device) + \
+        1 - torch.eye(comp.size(1), device=device) + \
             comp - comp.diagonal(0, batched, batched+1).unsqueeze(dim+batched)
     ).max(dim=dim+batched)[0].mean(dim=-1).sum()
 
