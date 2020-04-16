@@ -47,7 +47,7 @@ class CUBDataset(torch.utils.data.Dataset):
             self.vocab['ï'] = self.vocab['i']
             self.vocab['¿'] = self.vocab['?']
             self.vocab['½'] = self.vocab[' ']
-            self.vocab_len = len(self.vocab) - 3 # do not include 'ï', '¿'
+            self.vocab_len = len(self.vocab) - 3 # do not include 'ï', '¿', '½'
             self.split = list
 
         self.avail_classes = []
