@@ -1,5 +1,7 @@
 '''Text encoder architectures.'''
 
+# pylint: disable=no-member
+
 __all__ = ['ConvolutionalLSTM']
 
 import torch
@@ -12,9 +14,9 @@ class ConvolutionalLSTM(nn.Module):
 
     '''Convolutional Long Short-Term Memory.'''
 
-    def __init__(self, vocab_dim: int, conv_channels, conv_kernels,
-                 rnn_hidden_size: int, rnn_num_layers: int, conv_maxpool=3,
-                 conv_dropout=0.0, rnn_dropout=0.0, rnn_bidir=False):
+    def __init__(self, vocab_dim: int, conv_channels, conv_kernels, conv_strides,
+                 rnn_hidden_size: int, rnn_num_layers: int, conv_dropout=0.0,
+                 rnn_dropout=0.0, rnn_bidir=False):
 
         # pylint: disable=too-many-arguments
 
@@ -30,23 +32,23 @@ class ConvolutionalLSTM(nn.Module):
         for i in conv_kernels:
             assert isinstance(i, int) and i > 0
         assert len(conv_channels) == len(conv_kernels)
+        assert len(conv_channels) == len(conv_strides)
         assert rnn_hidden_size > 0
         assert rnn_num_layers > 0
         assert 0 <= conv_dropout < 1
         assert 0 <= rnn_dropout < 1
-        assert conv_maxpool > 1
-
 
         conv_channels = [vocab_dim] + conv_channels
-        self.conv_layers = nn.ModuleList()
 
-        for in_ch, out_ch, k in zip(conv_channels[:-1], conv_channels[1:], conv_kernels):
+        self.conv_layers = nn.ModuleList()
+        for in_ch, out_ch, k, s in zip(conv_channels[:-1], conv_channels[1:],
+                                       conv_kernels, conv_strides):
             self.conv_layers.append(
                 nn.Sequential(
                     nn.Conv1d(in_ch, out_ch, k, bias=False),
                     nn.BatchNorm1d(out_ch),
                     nn.ReLU(),
-                    nn.MaxPool1d(conv_maxpool),
+                    nn.MaxPool1d(s),
                     nn.Dropout(conv_dropout)
                 )
             )
@@ -67,6 +69,20 @@ class ConvolutionalLSTM(nn.Module):
         x = self.rnn(x.transpose(1, 2))
         return x
 
+    def compute_embedding(self, x):
+        '''Copmute final embedding from all the hidden layer activations
+        of the final layer through every step.'''
+
+        if self.rnn.bidirectional:
+            direction_size = x.size(-1) // 2
+            # reverse backward direction
+            x_front = x[..., :direction_size]
+            x_back = x[..., torch.arange(direction_size*2-1, direction_size-1, -1)]
+            x_ = torch.cat((x_front, x_back), dim=2)
+            return x_.mean(dim=1)
+
+        return x.mean(dim=1)
+
     def forward(self, x):
         '''Forward propagation.'''
 
@@ -74,4 +90,4 @@ class ConvolutionalLSTM(nn.Module):
         assert x.size(1) == next(self.conv_layers[0].children()).in_channels
 
         x = self._forward(x)
-        return x[0].mean(dim=1)
+        return self.compute_embedding(x[0])

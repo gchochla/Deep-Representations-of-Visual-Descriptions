@@ -9,7 +9,7 @@ import torch.optim as optim
 from text2image.utils import CUBDataset, encoders_loss, model_name
 from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
 
-def main():
+def train_text_encoder():
     '''Main'''
 
     parser = argparse.ArgumentParser()
@@ -45,11 +45,11 @@ def main():
     parser.add_argument('-k', '--conv_kernels', nargs='*', type=int, required=True,
                         help='convolution kernel sizes')
 
+    parser.add_argument('-cs', '--conv_strides', nargs='*', type=int, required=True,
+                        help='convolution kernel strides')
+
     parser.add_argument('-rn', '--rnn_num_layers', type=int, required=True,
                         help='number of layers in rnn')
-
-    parser.add_argument('-m', '--conv_maxpool', type=int, default=3,
-                        help='maxpool parameter')
 
     parser.add_argument('-rb', '--rnn_bidir', default=False, action='store_true',
                         help='whether to use bidirectional rnn')
@@ -57,7 +57,7 @@ def main():
     parser.add_argument('-cd', '--conv_dropout', type=float, default=0.,
                         help='dropout in convolutional layers')
 
-    parser.add_argument('-rd', '--rnn_dropout', type=float, defailt=0.,
+    parser.add_argument('-rd', '--rnn_dropout', type=float, default=0.,
                         help='dropout in lstm cells')
 
     parser.add_argument('-b', '--batches', required=True, type=int,
@@ -80,9 +80,9 @@ def main():
 
     img_encoder = googlenet_feature_extractor().to(args.device).eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
-                                    conv_kernels=args.conv_kernels, conv_maxpool=args.conv_maxpool,
-                                    rnn_num_layers=args.rnn_num_layers, rnn_bidir=args.rnn_bidir,
-                                    conv_dropout=args.conv_dropout, rnn_dropout=args.rnn_dropout,
+                                    conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
+                                    rnn_bidir=args.rnn_bidir, conv_dropout=args.conv_dropout,
+                                    rnn_dropout=args.rnn_dropout, rnn_num_layers=args.rnn_num_layers,
                                     rnn_hidden_size=1024 if not args.rnn_bidir else 512)\
                                         .to(args.device).train()
 
@@ -108,4 +108,4 @@ def main():
         torch.save(txt_encoder.state_dict(), model_name(args))
 
 if __name__ == '__main__':
-    main()
+    train_text_encoder()
