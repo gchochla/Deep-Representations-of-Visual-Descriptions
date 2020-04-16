@@ -55,13 +55,14 @@ def main():
     parser.add_argument('-rb', '--rnn_bidir', default=False, action='store_true',
                         help='whether to use bidirectional rnn')
 
-    parser.add_argument('-cd', '--conv_dropout', type=float,
+    parser.add_argument('-cd', '--conv_dropout', type=float, default=0.,
                         help='dropout in convolutional layers')
 
-    parser.add_argument('-rd', '--rnn_dropout', type=float,
+    parser.add_argument('-rd', '--rnn_dropout', type=float, default=0.,
                         help='dropout in lstm cells')
 
-    parser.add_argument('-b', '--batches', type=int, help='batches the model was trained on')
+    parser.add_argument('-b', '--batches', type=int, required=True,
+                        help='batches the model was trained on')
 
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4,
                         help='learning rate')
