@@ -68,18 +68,23 @@ def main():
 
     parser.add_argument('-md', '--model_dir', type=str, help='where to save model\'s parameters')
 
+    parser.add_argument('-dev', '--device', type=str, default='cuda:0',
+                        help='device to execute on')
+
     args = parser.parse_args()
 
     trainset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
                           image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
-                          text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn)
+                          text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
+                          device=args.device)
 
-    img_encoder = googlenet_feature_extractor().eval()
+    img_encoder = googlenet_feature_extractor().to(args.device).eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
                                     conv_kernels=args.conv_kernels, conv_maxpool=args.conv_maxpool,
                                     rnn_num_layers=args.rnn_num_layers, rnn_bidir=args.rnn_bidir,
                                     conv_dropout=args.conv_dropout, rnn_dropout=args.rnn_dropout,
-                                    rnn_hidden_size=1024 if not args.rnn_bidir else 512).train()
+                                    rnn_hidden_size=1024 if not args.rnn_bidir else 512)\
+                                        .to(args.device).train()
 
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
 
@@ -90,7 +95,7 @@ def main():
         img_embs = img_encoder(ims)
         txt_embs = txt_encoder(txts)
 
-        loss = encoders_loss(img_embs, txt_embs, lbls, batched=False)
+        loss = encoders_loss(img_embs, txt_embs, lbls, batched=False, device=args.device)
 
         optimizer.zero_grad()
         loss.backward()

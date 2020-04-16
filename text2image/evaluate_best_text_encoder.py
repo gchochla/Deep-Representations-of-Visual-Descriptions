@@ -40,6 +40,9 @@ def main():
     parser.add_argument('-md', '--model_dir', type=str, required=True,
                         help='where to retrieve model\'s parameters')
 
+    parser.add_argument('-dev', '--device', type=str, default='cuda:0',
+                        help='device to execute on')
+
     parser.add_argument('-s', '--summary', type=str, help='where resulting metrics are saved')
 
     parser.add_argument('-c', '--clear', default=False, action='store_true',
@@ -62,16 +65,18 @@ def main():
 
     evalset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
                          image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
-                         text_cutoff=args.text_cutoff, level=margs.level, vocab_fn=args.vocab_fn)
+                         text_cutoff=args.text_cutoff, level=margs.level, vocab_fn=args.vocab_fn,
+                         device=args.device)
 
-    img_encoder = googlenet_feature_extractor().eval()
+    img_encoder = googlenet_feature_extractor().to(args.device).eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=evalset.vocab_len, conv_channels=margs.conv_channels,
                                     conv_kernels=margs.conv_kernels, conv_maxpool=margs.conv_maxpool,
                                     rnn_num_layers=margs.rnn_num_layers, rnn_bidir=margs.rnn_bidir,
-                                    rnn_hidden_size=1024 if not margs.rnn_bidir else 512).eval()
+                                    rnn_hidden_size=1024 if not margs.rnn_bidir else 512)\
+                                        .to(args.device).eval()
     txt_encoder.load_state_dict(torch.load(model_name(margs)))
 
-    mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024)
+    mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024, device=args.device)
     for i, (captions, _lbl) in enumerate(evalset.get_captions()):
         mean_txt_embs[i] = txt_encoder(captions.view(-1, *captions.size()[-2:])).mean(dim=0)
 

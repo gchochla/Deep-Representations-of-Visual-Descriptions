@@ -19,6 +19,7 @@ batches_ar="100 1000 10000"
 learning_rate_ar="0.001 0.0001 0.00005"
 model_dir="models"
 summary="models/experiments.txt"
+device="cuda:0"
 
 for conv_channels in "${conv_channels_ar[@]}"; do
     for conv_dropout in $conv_dropout_ar; do
@@ -29,25 +30,27 @@ for conv_channels in "${conv_channels_ar[@]}"; do
                     "-avc $trainclasses_fn -i $image_dir -t $text_dir -px $img_px" \
                     "-cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels" \
                     "-k $conv_kernels -rn $rnn_num_layers -rb -cd $conv_dropout" \
-                    "-rd $rnn_dropout -b $batches -lr $learning_rate -md $model_dir"
+                    "-rd $rnn_dropout -b $batches -lr $learning_rate -md $model_dir" \
+                    "-dev $device"
 
                     python text2image/train_text_encoder.py -d $dataset_dir \
                     -avc $trainclasses_fn -i $image_dir -t $text_dir -px $img_px \
                     -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
                     -k $conv_kernels -rn $rnn_num_layers -rb -cd $conv_dropout \
-                    -rd $rnn_dropout -b $batches -lr $learning_rate -md $model_dir
+                    -rd $rnn_dropout -b $batches -lr $learning_rate -md $model_dir \
+                    -dev device
 
                     echo "python text2image/evaluate_text_encoder.py -d $dataset_dir" \
                     "-avc $valclasses_fn -i $image_dir -t $text_dir -px $img_px" \
                     "-cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels" \
                     "-k $conv_kernels -rn $rnn_num_layers -rb -cd $conv_dropout -rd $rnn_dropout" \
-                    "-b $batches -lr $learning_rate -md $model_dir -s $summary" \
+                    "-b $batches -lr $learning_rate -md $model_dir -s $summary -dev $device" \
 
                     python text2image/evaluate_text_encoder.py -d $dataset_dir \
                     -avc $valclasses_fn -i $image_dir -t $text_dir -px $img_px \
                     -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
                     -k $conv_kernels -rn $rnn_num_layers -rb -cd $conv_dropout -rd $rnn_dropout \
-                    -b $batches -lr $learning_rate -md $model_dir -s $summary
+                    -b $batches -lr $learning_rate -md $model_dir -s $summary -dev $device
                 done
             done
         done
@@ -56,8 +59,8 @@ done
 
 echo "python text2image/evaluate_best_text_encoder.py -d $dataset_dir" \
 "-avc $testclasses_fn -i $image_dir -t $text_dir -px $img_px" \
-"-cut $text_cutoff -v $vocab_fn -md $model_dir -s $summary -c"
+"-cut $text_cutoff -v $vocab_fn -md $model_dir -dev $device -s $summary -c"
 
 python text2image/evaluate_best_text_encoder.py -d $dataset_dir \
 -avc $testclasses_fn -i $image_dir -t $text_dir -px $img_px \
--cut $text_cutoff -v $vocab_fn -md $model_dir -s $summary -c
+-cut $text_cutoff -v $vocab_fn -md $model_dir -dev $device -s $summary -c

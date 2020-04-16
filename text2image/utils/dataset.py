@@ -19,7 +19,8 @@ class CUBDataset(torch.utils.data.Dataset):
 
     '''CUB-200-2011 dataset.'''
     def __init__(self, dataset_dir: str, avail_class_fn: str, image_dir: str,
-                 text_dir: str, img_px: int, text_cutoff: int, level='char', **kwargs):
+                 text_dir: str, img_px: int, text_cutoff: int, level='char',
+                 device='cuda:0', **kwargs):
 
         # pylint: disable=too-many-arguments
 
@@ -62,6 +63,7 @@ class CUBDataset(torch.utils.data.Dataset):
         self.text_dir = text_dir
         self.image_px = img_px
         self.text_cutoff = text_cutoff
+        self.device = device
 
     def get_captions(self):
         '''Creates generator that yields one class' captions at a time in a
@@ -73,11 +75,12 @@ class CUBDataset(torch.utils.data.Dataset):
 
             txt_fns = os.listdir(os.path.join(self.dataset_dir, self.text_dir, clas))
             txt_fns = list(filter(lambda s: os.path.splitext(s)[1] == '.h5', txt_fns))
-            clas_txts = torch.empty(len(txt_fns), 10, self.vocab_len, self.text_cutoff)
+            clas_txts = torch.empty(len(txt_fns), 10, self.vocab_len,
+                                    self.text_cutoff, device=self.device)
 
             for i, txt_fn in enumerate(txt_fns):
                 txtvals = h5py.File(os.path.join(self.dataset_dir, self.text_dir,
-                                              clas, txt_fn), 'r').values()
+                                                 clas, txt_fn), 'r').values()
                 for j, txt in enumerate(txtvals):
                     clas_txts[i, j] = self.process_text(txt)
 
@@ -91,7 +94,8 @@ class CUBDataset(torch.utils.data.Dataset):
             lbl = int(clas.split('.')[0])
 
             img_fns = os.listdir(os.path.join(self.dataset_dir, self.image_dir, clas))
-            clas_imgs = torch.empty(len(img_fns), 3, self.image_px, self.image_px)
+            clas_imgs = torch.empty(len(img_fns), 3, self.image_px, self.image_px,
+                                    device=self.device)
 
             for i, img_fn in enumerate(img_fns):
                 img = Image.open(os.path.join(self.dataset_dir, self.image_dir,
@@ -108,9 +112,11 @@ class CUBDataset(torch.utils.data.Dataset):
 
         assert 1 <= n_txts <= 10
 
-        imgs = torch.empty(len(self.avail_classes), 3, self.image_px, self.image_px)
-        txts = torch.empty(len(self.avail_classes), n_txts, self.vocab_len, self.text_cutoff)
-        lbls = torch.empty(len(self.avail_classes), dtype=int)
+        imgs = torch.empty(len(self.avail_classes), 3, self.image_px, self.image_px,
+                           device=self.device)
+        txts = torch.empty(len(self.avail_classes), n_txts, self.vocab_len,
+                           self.text_cutoff, device=self.device)
+        lbls = torch.empty(len(self.avail_classes), dtype=int, device=self.device)
 
         rand_class_ind = torch.randperm(len(self.avail_classes))
         for i, class_ind in enumerate(rand_class_ind):
@@ -146,7 +152,7 @@ class CUBDataset(torch.utils.data.Dataset):
         # trans to str and split
         text = self.split(''.join(map(chr, text[:self.text_cutoff].astype(int))))
 
-        res = torch.zeros(self.vocab_len, self.text_cutoff)
+        res = torch.zeros(self.vocab_len, self.text_cutoff, device=self.device)
         res[[[self.vocab[tok] for tok in text], range(len(text))]] = 1
 
         return res

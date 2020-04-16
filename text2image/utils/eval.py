@@ -23,7 +23,7 @@ def Fvt(x, y):
 
     return torch.matmul(x, y.transpose(-2, -1))
 
-def modality_loss(comp: torch.Tensor, dim: int, batched=False):
+def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
     '''Compute loss across modality (image or text). The losses are defined as
     (`Learning Deep Representations of Fine-Grained Visual Descriptions`):
 
@@ -55,11 +55,11 @@ def modality_loss(comp: torch.Tensor, dim: int, batched=False):
     # size(1) is not concerned with the existence of batch dimension
     # unsqueeze in diagonal to control
     return F.relu(
-        1 - torch.eye(comp.size(1)) + \
+        1 - torch.eye(comp.size(1)).to(device) + \
             comp - comp.diagonal(0, batched, batched+1).unsqueeze(dim+batched)
     ).max(dim=dim+batched)[0].mean(dim=-1).sum()
 
-def encoders_loss(im_enc, txt_enc, _lbls, batched=False):
+def encoders_loss(im_enc, txt_enc, _lbls, batched=False, device='cuda:0'):
     '''Compute and return loss as defined in
     `Learning Deep Representations of Fine-Grained Visual Descriptions`.
 
@@ -83,7 +83,7 @@ def encoders_loss(im_enc, txt_enc, _lbls, batched=False):
 
     comp = Fvt(im_enc, txt_enc)
 
-    loss = modality_loss(comp, 0, batched) + \
-        modality_loss(comp, 1, batched)
+    loss = modality_loss(comp, 0, batched, device) + \
+        modality_loss(comp, 1, batched, device)
 
     return loss
