@@ -6,7 +6,7 @@ import argparse
 import torch
 import torch.optim as optim
 
-from text2image.utils import CUBDataset, encoders_loss, model_name
+from text2image.utils import CUBDataset, joint_embedding_loss, model_name
 from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
 
 def train_text_encoder():
@@ -95,7 +95,7 @@ def train_text_encoder():
         img_embs = img_encoder(ims)
         txt_embs = txt_encoder(txts)
 
-        loss = encoders_loss(img_embs, txt_embs, lbls, batched=False, device=args.device)
+        loss = joint_embedding_loss(img_embs, txt_embs, lbls, batched=False, device=args.device)
 
         optimizer.zero_grad()
         loss.backward()

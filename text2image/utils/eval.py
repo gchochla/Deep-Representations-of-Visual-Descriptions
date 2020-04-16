@@ -2,7 +2,7 @@
 
 # pylint: disable=no-member
 
-__all__ = ['Fvt', 'modality_loss', 'encoders_loss']
+__all__ = ['Fvt', 'modality_loss', 'joint_embedding_loss']
 
 import torch
 import torch.nn.functional as F
@@ -59,7 +59,7 @@ def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
             comp - comp.diagonal(0, batched, batched+1).unsqueeze(dim+batched)
     ).max(dim=dim+batched)[0].mean(dim=-1).sum()
 
-def encoders_loss(im_enc, txt_enc, _lbls, batched=False, device='cuda:0'):
+def joint_embedding_loss(im_enc, txt_enc, _lbls, batched=False, device='cuda:0'):
     '''Compute and return loss as defined in
     `Learning Deep Representations of Fine-Grained Visual Descriptions`.
 
