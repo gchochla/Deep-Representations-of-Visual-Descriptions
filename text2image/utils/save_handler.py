@@ -22,6 +22,7 @@ def hyperparameters(parser_args, delim=','):
     args = deepcopy(parser_args)
     args.conv_channels = '-'.join(map(str, parser_args.conv_channels))
     args.conv_kernels = '-'.join(map(str, parser_args.conv_kernels))
+    args.conv_strides = '-'.join(map(str, parser_args.conv_strides))
     name = delim.join([str(getattr(args, attr)) for attr in ATTRS])
     return name
 
