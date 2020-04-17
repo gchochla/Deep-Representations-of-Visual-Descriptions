@@ -63,6 +63,9 @@ def train_text_encoder():
     parser.add_argument('-b', '--batches', required=True, type=int,
                         help='number of batches')
 
+    parser.add_argument('-mbs', '--minibatch_size', type=int, default=-1,
+                        help='minibatch size, <=0 fetches all classes')
+
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4,
                         help='learning rate')
 
@@ -76,7 +79,7 @@ def train_text_encoder():
     trainset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
                           image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
                           text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
-                          device=args.device)
+                          device=args.device, minibatch_size=args.minibatch_size)
 
     img_encoder = googlenet_feature_extractor().to(args.device).eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
@@ -91,7 +94,7 @@ def train_text_encoder():
     for batch in range(args.batches):
         print(f'Batch {batch+1}')
 
-        ims, txts, lbls = trainset.get_next_batch()
+        ims, txts, lbls = trainset.get_next_minibatch()
         img_embs = img_encoder(ims)
         txt_embs = txt_encoder(txts)
 

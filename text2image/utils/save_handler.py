@@ -7,7 +7,7 @@ import types
 from copy import deepcopy
 
 ATTRS = [
-    'batches', 'level', 'img_px', 'text_cutoff', 'conv_channels',
+    'batches', 'minibatch_size', 'level', 'img_px', 'text_cutoff', 'conv_channels',
     'conv_kernels', 'conv_strides', 'rnn_num_layers',
     'rnn_bidir', 'learning_rate', 'conv_dropout', 'rnn_dropout'
 ]
@@ -32,7 +32,7 @@ def get_hyperparameters_from_entry(name: str):
 
     values = name.split(',')
     for attr, value in zip(ATTRS, values):
-        if attr in ('batches', 'img_px', 'text_cutoff', 'rnn_num_layers'):
+        if attr in ('batches', 'minibatch_size', 'img_px', 'text_cutoff', 'rnn_num_layers'):
             value = int(value)
         elif attr in ('learning_rate', 'conv_dropout', 'rnn_dropout'):
             value = float(value)

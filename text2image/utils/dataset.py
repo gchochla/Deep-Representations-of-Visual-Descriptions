@@ -65,6 +65,11 @@ class CUBDataset(torch.utils.data.Dataset):
         self.text_cutoff = text_cutoff
         self.device = device
 
+        if 'minibatch_size' in kwargs and kwargs['minibatch_size'] > 1:
+            self.minibatch_size = kwargs['minibatch_size']
+        else:
+            self.minibatch_size = len(self.avail_classes)
+
     def get_captions(self):
         '''Creates generator that yields one class' captions at a time in a
         `torch.Tensor` of size `images`x`10`x`vocabulary_size`x`caption_max_size`.
@@ -104,7 +109,7 @@ class CUBDataset(torch.utils.data.Dataset):
 
             yield clas_imgs, lbl
 
-    def get_next_batch(self, n_txts=1):
+    def get_next_minibatch(self, n_txts=1):
         '''Get next training batch as suggested in
         `Learning Deep Representations of Fine-Grained Visual Descriptions`, i.e.
         one image with `n_txts` matching descriptions is returned from every class along
@@ -112,13 +117,13 @@ class CUBDataset(torch.utils.data.Dataset):
 
         assert 1 <= n_txts <= 10
 
-        imgs = torch.empty(len(self.avail_classes), 3, self.image_px, self.image_px,
+        imgs = torch.empty(self.minibatch_size, 3, self.image_px, self.image_px,
                            device=self.device)
-        txts = torch.empty(len(self.avail_classes), n_txts, self.vocab_len,
+        txts = torch.empty(self.minibatch_size, n_txts, self.vocab_len,
                            self.text_cutoff, device=self.device)
-        lbls = torch.empty(len(self.avail_classes), dtype=int, device=self.device)
+        lbls = torch.empty(self.minibatch_size, dtype=int, device=self.device)
 
-        rand_class_ind = torch.randperm(len(self.avail_classes))
+        rand_class_ind = torch.randperm(len(self.avail_classes))[:self.minibatch_size]
         for i, class_ind in enumerate(rand_class_ind):
             clas = self.avail_classes[class_ind]
 
