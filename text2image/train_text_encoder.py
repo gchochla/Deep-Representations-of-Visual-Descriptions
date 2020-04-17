@@ -1,12 +1,14 @@
 '''Train text encoder.'''
 
+# pylint: disable=no-member
+
 import os
 import argparse
 
 import torch
 import torch.optim as optim
 
-from text2image.utils import CUBDataset, joint_embedding_loss, model_name
+from text2image.utils import CUBDataset, joint_embedding_loss, model_name, Fvt
 from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
 
 def train_text_encoder():
@@ -74,6 +76,9 @@ def train_text_encoder():
     parser.add_argument('-dev', '--device', type=str, default='cuda:0',
                         help='device to execute on')
 
+    parser.add_argument('-pe', '--print_every', type=int,
+                        help='print accuracy of batch in regular intervals')
+
     args = parser.parse_args()
 
     trainset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
@@ -92,8 +97,6 @@ def train_text_encoder():
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
 
     for batch in range(args.batches):
-        print(f'Batch {batch+1}')
-
         ims, txts, lbls = trainset.get_next_minibatch()
         img_embs = img_encoder(ims)
         txt_embs = txt_encoder(txts)
@@ -103,6 +106,14 @@ def train_text_encoder():
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        if args.print_every is not None and \
+            ((batch+1) % args.print_every == 0 or batch == 0):
+            comp = Fvt(img_embs, txt_embs)
+            corr = (comp.max(dim=-1)[1] == torch.arange(comp.size(0), device=args.device))\
+                .sum().item()
+            print(f'Batch {batch+1} loss {loss.item():.4f}, accuracy: {corr}/{comp.size(0)}')
+
     print('Done training')
 
     if args.model_dir:
