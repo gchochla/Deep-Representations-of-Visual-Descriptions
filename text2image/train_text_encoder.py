@@ -18,13 +18,13 @@ def train_text_encoder():
                         help='dataset root directory')
 
     parser.add_argument('-avc', '--avail_class_fn', required=True, type=str,
-                        help='txt containing classes used')
+                        help='txt containing classes used w.r.t dataset directory')
 
     parser.add_argument('-i', '--image_dir', required=True, type=str,
                         help='directory of images w.r.t dataset directory')
 
     parser.add_argument('-t', '--text_dir', required=True, type=str,
-                        help='directory of descriptions w.r.t detaset directory')
+                        help='directory of descriptions w.r.t dataset directory')
 
     parser.add_argument('-px', '--img_px', required=True, type=int,
                         help='pixels for image to be resized to')

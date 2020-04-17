@@ -31,7 +31,7 @@ def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
 
     l_v(v_n, t_n, y_n) = max_{y in labels}(0, D(y, y_n) + E_{v from V(y)}[F(v,t_n) - F[v_n,t_n]])
 
-    As suggested, only on description pre class is used, so the Expectation is approximated
+    As suggested, only one pair per class is used, so the Expectation is approximated
     by the value of one sample. The implementation is fully vectorized. Notice that the labels
     are not used as the D loss is zero in the diagonal if the class of an index between tensors
     is the same. `dim` essentially controls the broadcasting dimensions, e.g. if `dim==0`, the
@@ -45,19 +45,18 @@ def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
 
     * `dim`: `int` dimension to check compatibility.
 
-    * `batched`: `bool` indicating if 1st dimension is batch dimension.
+    * `batched`: `bool` indicating if 1st dimension is batch dimension
+    (no to be confused with minibatch).
 
     Returns:
 
-    * `torch.Tensor` of loss.'''
+    * `torch.Tensor` of loss[es if `batched`].'''
 
     batched = int(batched) # 0 or 1
     # size(1) is not concerned with the existence of batch dimension
-    # unsqueeze in diagonal to control
-    return F.relu(
-        1 - torch.eye(comp.size(1), device=device) + \
-            comp - comp.diagonal(0, batched, batched+1).unsqueeze(dim+batched)
-    ).max(dim=dim+batched)[0].mean(dim=-1).sum()
+    Dy = 1 - torch.eye(comp.size(1), device=device)
+    comp_dif = comp - comp.diagonal(0, batched, batched+1).unsqueeze(dim+batched)
+    return F.relu(Dy + comp_dif).max(dim=dim+batched)[0].mean(dim=-1)
 
 def joint_embedding_loss(im_enc, txt_enc, _lbls, batched=False, device='cuda:0'):
     '''Compute and return loss as defined in
@@ -77,7 +76,7 @@ def joint_embedding_loss(im_enc, txt_enc, _lbls, batched=False, device='cuda:0')
 
     Returns:
 
-    * `torch.Tensor` of losses.'''
+    * `torch.Tensor` of loss[es if `batched`].'''
 
     assert im_enc.size() == txt_enc.size()
 

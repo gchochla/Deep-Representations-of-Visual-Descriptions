@@ -19,13 +19,13 @@ def evaluate_text_encoder():
                         help='dataset root directory')
 
     parser.add_argument('-avc', '--avail_class_fn', required=True, type=str,
-                        help='txt containing classes used')
+                        help='txt containing classes used w.r.t dataset directory')
 
     parser.add_argument('-i', '--image_dir', required=True, type=str,
                         help='directory of images w.r.t dataset directory')
 
     parser.add_argument('-t', '--text_dir', required=True, type=str,
-                        help='directory of descriptions w.r.t detaset directory')
+                        help='directory of descriptions w.r.t dataset directory')
 
     parser.add_argument('-px', '--img_px', required=True, type=int,
                         help='pixels for image to be resized to')
@@ -79,8 +79,6 @@ def evaluate_text_encoder():
     parser.add_argument('-s', '--summary', type=str, help='where to save resulting metrics')
 
     args = parser.parse_args()
-
-    assert args.summary is None or args.batches is not None
 
     evalset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
                          image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
