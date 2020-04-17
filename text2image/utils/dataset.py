@@ -66,7 +66,7 @@ class CUBDataset(torch.utils.data.Dataset):
         self.device = device
 
         if 'minibatch_size' in kwargs and kwargs['minibatch_size'] > 1:
-            self.minibatch_size = kwargs['minibatch_size']
+            self.minibatch_size = min(kwargs['minibatch_size'], len(self.avail_classes))
         else:
             self.minibatch_size = len(self.avail_classes)
 
