@@ -115,6 +115,21 @@ class CUBDataset(torch.utils.data.Dataset):
         one image with `n_txts` matching descriptions is returned from every class along
         with their labels.'''
 
+        def jitter(img):
+            '''Randomly flip and crop image `PIL.Image img`.'''
+            wdt, hgt = img.size
+            flip = bool(torch.randint(2, (1,)).item())
+            crop = torch.randint(5, (1,)).item()
+            crop = [
+                (0, 0, int(wdt*0.8), int(hgt*0.8)), (int(wdt*0.2), 0, wdt, int(hgt*0.8)),
+                (0, int(hgt*0.2), int(wdt*0.8), hgt), (int(wdt*0.2), int(hgt*0.2), wdt, hgt),
+                (int(wdt*0.1), int(hgt*0.1), int(wdt*0.9), int(hgt*0.9))
+            ][crop]
+
+            if flip:
+                img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            return img.crop(crop).resize((self.image_px,)*2)
+
         assert 1 <= n_txts <= 10
 
         imgs = torch.empty(self.minibatch_size, 3, self.image_px, self.image_px,
@@ -137,7 +152,7 @@ class CUBDataset(torch.utils.data.Dataset):
             txt_fn = os.path.splitext(sample_fn)[0] + '.h5'
 
             img = Image.open(os.path.join(self.dataset_dir, self.image_dir,
-                                          clas, sample_fn)).resize((self.image_px,)*2)
+                                          clas, sample_fn))
             txtobj = h5py.File(os.path.join(self.dataset_dir, self.text_dir,
                                             clas, txt_fn), 'r')
             for j, rand_txt in enumerate(rand_txts):
@@ -145,7 +160,7 @@ class CUBDataset(torch.utils.data.Dataset):
                 txt = self.process_text(txt)
                 txts[i, j] = txt
 
-            imgs[i] = transforms.ToTensor()(img)
+            imgs[i] = transforms.ToTensor()(jitter(img))
             lbls[i] = lbl
 
         return imgs, txts.squeeze(), lbls
