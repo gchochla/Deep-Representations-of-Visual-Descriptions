@@ -9,7 +9,7 @@ import torch
 import torch.optim as optim
 
 from text2image.utils import CUBDataset, joint_embedding_loss, model_name, Fvt
-from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
+from text2image.encoders import ConvolutionalLSTM
 
 def train_text_encoder():
     '''Main'''
@@ -86,7 +86,6 @@ def train_text_encoder():
                           text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
                           device=args.device, minibatch_size=args.minibatch_size)
 
-    img_encoder = googlenet_feature_extractor().to(args.device).eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
                                     conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
                                     rnn_bidir=args.rnn_bidir, conv_dropout=args.conv_dropout,
@@ -97,8 +96,7 @@ def train_text_encoder():
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
 
     for batch in range(args.batches):
-        ims, txts, lbls = trainset.get_next_minibatch()
-        img_embs = img_encoder(ims)
+        img_embs, txts, lbls = trainset.get_next_minibatch()
         txt_embs = txt_encoder(txts)
 
         loss = joint_embedding_loss(img_embs, txt_embs, lbls, batched=False, device=args.device)

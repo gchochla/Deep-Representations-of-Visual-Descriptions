@@ -8,7 +8,7 @@ import argparse
 import torch
 
 from text2image.utils import CUBDataset, Fvt, hyperparameters, model_name
-from text2image.encoders import googlenet_feature_extractor, ConvolutionalLSTM
+from text2image.encoders import ConvolutionalLSTM
 
 def evaluate_text_encoder():
     '''Main'''
@@ -83,9 +83,8 @@ def evaluate_text_encoder():
     evalset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
                          image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
                          text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
-                         device=args.device, minibatch_size=args.minibatch_size)
+                         device=args.device)
 
-    img_encoder = googlenet_feature_extractor().to(args.device).eval()
     txt_encoder = ConvolutionalLSTM(vocab_dim=evalset.vocab_len, conv_channels=args.conv_channels,
                                     conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
                                     rnn_bidir=args.rnn_bidir, rnn_num_layers=args.rnn_num_layers,
@@ -98,8 +97,7 @@ def evaluate_text_encoder():
         mean_txt_embs[i] = txt_encoder(captions.view(-1, *captions.size()[-2:])).mean(dim=0)
 
     corr, outa = 0, 0
-    for i, (images, _lbl) in enumerate(evalset.get_images()):
-        img_embs = img_encoder(images)
+    for i, (img_embs, _lbl) in enumerate(evalset.get_images()):
         preds = Fvt(img_embs, mean_txt_embs).max(dim=1)[1]
         corr += (preds == i).sum().item()
         outa += len(preds)
