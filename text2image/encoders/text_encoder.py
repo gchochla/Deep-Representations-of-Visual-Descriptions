@@ -70,7 +70,7 @@ class ConvolutionalLSTM(nn.Module):
         return x
 
     def compute_embedding(self, x):
-        '''Copmute final embedding from all the hidden layer activations
+        '''Compute final embedding from all the hidden layer activations
         of the final layer through every step.'''
 
         if self.rnn.bidirectional:
