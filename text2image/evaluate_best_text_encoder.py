@@ -76,8 +76,9 @@ def test_best():
     txt_encoder.load_state_dict(torch.load(model_name(margs)))
 
     mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024, device=args.device)
-    for i, (captions, _lbl) in enumerate(evalset.get_captions()):
-        mean_txt_embs[i] = txt_encoder(captions.view(-1, *captions.size()[-2:])).mean(dim=0)
+    with torch.no_grad():
+        for i, (captions, _lbl) in enumerate(evalset.get_captions()):
+            mean_txt_embs[i] = txt_encoder(captions.view(-1, *captions.size()[-2:])).mean(dim=0)
 
     corr, outa = 0, 0
     for i, (img_embs, _lbl) in enumerate(evalset.get_images()):

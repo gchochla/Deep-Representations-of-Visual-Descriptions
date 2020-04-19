@@ -38,56 +38,59 @@ def embed(dataset_dir, image_dir, img_px, image_emb_dir, device, classes, train)
 
     img_encoder = googlenet_feature_extractor().to(device).eval()
     pil2tensor = transforms.ToTensor()
-    for clas_dir in os.listdir(image_dir):
+    with torch.no_grad():
+        for clas_dir in os.listdir(image_dir):
 
-        if clas_dir not in avail_classes: # if not instructed to meddle with class
-            continue
+            if clas_dir not in avail_classes: # if not instructed to meddle with class
+                continue
 
-        # get file name of embeddings of class, e.g. bluh/001.Black_footed_Albatross.h5
-        clas_embs_fn = os.path.join(image_emb_dir, clas_dir) + '.h5'
+            # get file name of embeddings of class, e.g. bluh/001.Black_footed_Albatross.h5
+            clas_embs_fn = os.path.join(image_emb_dir, clas_dir) + '.h5'
 
-        clas_ims = os.listdir(os.path.join(image_dir, clas_dir))
-        active_cnt = 0 # images could be grayscale, keep count of RGB ones
-        with h5py.File(clas_embs_fn, 'w') as h5fp:
-            for clas_im in clas_ims:
-                img = Image.open(os.path.join(image_dir, clas_dir, clas_im))
-                img_name = os.path.splitext(clas_im)[0] # get name to keep corresp with text
-                if train: # if train, include embedding of crops
-                    embs = torch.empty(1024, 10, device=device)
-                    wdt, hgt = img.size
-                    crops = [
-                        (0, 0, int(wdt*0.8), int(hgt*0.8)), (int(wdt*0.2), 0, wdt, int(hgt*0.8)),
-                        (0, int(hgt*0.2), int(wdt*0.8), hgt), (int(wdt*0.2), int(hgt*0.2), wdt, hgt),
-                        (int(wdt*0.1), int(hgt*0.1), int(wdt*0.9), int(hgt*0.9))
-                    ]
+            clas_ims = os.listdir(os.path.join(image_dir, clas_dir))
+            active_cnt = 0 # images could be grayscale, keep count of RGB ones
+            with h5py.File(clas_embs_fn, 'w') as h5fp:
+                for clas_im in clas_ims:
+                    img = Image.open(os.path.join(image_dir, clas_dir, clas_im))
+                    img_name = os.path.splitext(clas_im)[0] # get name to keep corresp with text
+                    if train: # if train, include embedding of crops
+                        embs = torch.empty(1024, 10, device=device)
+                        wdt, hgt = img.size
+                        crops = [
+                            (0, 0, int(wdt*0.8), int(hgt*0.8)),
+                            (int(wdt*0.2), 0, wdt, int(hgt*0.8)),
+                            (0, int(hgt*0.2), int(wdt*0.8), hgt),
+                            (int(wdt*0.2), int(hgt*0.2), wdt, hgt),
+                            (int(wdt*0.1), int(hgt*0.1), int(wdt*0.9), int(hgt*0.9))
+                        ]
 
-                    rgb = True
-                    for j, crop in enumerate(crops):
-                        tens = pil2tensor(img.crop(crop).resize((img_px,)*2))
-                        if tens.size(0) != 3:
-                            # if image grayscale. should be activate first time it's checked
-                            rgb = False
-                            break
-                        embs[..., 2*j] = img_encoder(tens.unsqueeze(0))
-                        tens = pil2tensor(
-                            img.transpose(Image.FLIP_LEFT_RIGHT).crop(crop).resize((img_px,)*2)
-                        )
-                        embs[ ..., 2*j+1] = img_encoder(tens.unsqueeze(0))
-                    if not rgb:
-                        continue
+                        rgb = True
+                        for j, crop in enumerate(crops):
+                            tens = pil2tensor(img.crop(crop).resize((img_px,)*2))
+                            if tens.size(0) != 3:
+                                # if image grayscale. should be activate first time it's checked
+                                rgb = False
+                                break
+                            embs[..., 2*j] = img_encoder(tens.unsqueeze(0))
+                            tens = pil2tensor(
+                                img.transpose(Image.FLIP_LEFT_RIGHT).crop(crop).resize((img_px,)*2)
+                            )
+                            embs[..., 2*j+1] = img_encoder(tens.unsqueeze(0))
+                        if not rgb:
+                            continue
 
-                else: # if testing, only original images are used
-                    img = pil2tensor(img.resize((img_px,)*2))
-                    if img.size(0) != 3:
-                        continue
-                    embs = img_encoder(img.unsqueeze(0)).squeeze()
-                    active_cnt += 1
+                    else: # if testing, only original images are used
+                        img = pil2tensor(img.resize((img_px,)*2))
+                        if img.size(0) != 3:
+                            continue
+                        embs = img_encoder(img.unsqueeze(0)).squeeze()
+                        active_cnt += 1
 
-                if device.startswith('cuda'):
-                    embs = embs.cpu()
-                embs = embs.detach().numpy()
+                    if device.startswith('cuda'):
+                        embs = embs.cpu()
+                    embs = embs.detach().numpy()
 
-                h5fp[img_name] = embs
+                    h5fp[img_name] = embs
 
 def transform(dataset_dir, image_dir, image_emb_dir, classes, clear):
     '''Transform embeddings from .t7 to .h5'''
