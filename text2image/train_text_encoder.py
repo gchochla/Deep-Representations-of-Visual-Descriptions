@@ -71,6 +71,9 @@ def train_text_encoder():
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4,
                         help='learning rate')
 
+    parser.add_argument('-lrd', '--lr_decay', default=False, action='store_true',
+                        help='whether to use learning rate decay')
+
     parser.add_argument('-md', '--model_dir', type=str, help='where to save model\'s parameters')
 
     parser.add_argument('-dev', '--device', type=str, default='cuda:0',
@@ -94,6 +97,9 @@ def train_text_encoder():
                                         .to(args.device).train()
 
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
+    if args.lr_decay:
+        # keep value closer to 1 than usual because of no solid def of epoch
+        lr_decay = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda b: 0.9997)
 
     for batch in range(args.batches):
         img_embs, txts, lbls = trainset.get_next_minibatch()
@@ -104,6 +110,9 @@ def train_text_encoder():
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        if args.lr_decay:
+            lr_decay.step()
 
         if args.print_every is not None and \
             ((batch+1) % args.print_every == 0 or batch == 0):

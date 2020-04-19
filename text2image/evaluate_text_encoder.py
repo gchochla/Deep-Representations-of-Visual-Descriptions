@@ -70,6 +70,9 @@ def evaluate_text_encoder():
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4,
                         help='learning rate')
 
+    parser.add_argument('-lrd', '--lr_decay', default=False, action='store_true',
+                        help='whether to use learning rate decay')
+
     parser.add_argument('-md', '--model_dir', type=str, required=True,
                         help='where to retrieve model\'s parameters')
 

@@ -8,8 +8,8 @@ from copy import deepcopy
 
 ATTRS = [
     'batches', 'minibatch_size', 'level', 'img_px', 'text_cutoff', 'conv_channels',
-    'conv_kernels', 'conv_strides', 'rnn_num_layers',
-    'rnn_bidir', 'learning_rate', 'conv_dropout', 'rnn_dropout'
+    'conv_kernels', 'conv_strides', 'rnn_num_layers', 'rnn_bidir', 'learning_rate',
+    'lr_decay', 'conv_dropout', 'rnn_dropout'
 ]
 
 def model_name(parser_args):
@@ -38,7 +38,7 @@ def get_hyperparameters_from_entry(name: str):
             value = float(value)
         elif attr in ('conv_channels', 'conv_kernels', 'conv_strides'):
             value = list(map(int, value.split('-')))
-        elif attr == 'rnn_bidir':
+        elif attr in ('rnn_bidir', 'lr_decay'):
             value = bool(value)
 
         setattr(obj, attr, value)
