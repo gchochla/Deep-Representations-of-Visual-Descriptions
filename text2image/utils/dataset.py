@@ -118,7 +118,7 @@ class CUBDataset(torch.utils.data.Dataset):
 
         assert 1 <= n_txts <= 10
 
-        imgs = torch.empty(self.minibatch_size, 1024)
+        imgs = torch.empty(self.minibatch_size, 1024, device=self.device)
         txts = torch.empty(self.minibatch_size, n_txts, self.vocab_len,
                            self.text_cutoff, device=self.device)
         lbls = torch.empty(self.minibatch_size, dtype=int, device=self.device)
