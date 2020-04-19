@@ -105,7 +105,7 @@ class CUBDataset(torch.utils.data.Dataset):
             with h5py.File(img_fn, 'r') as h5fp:
                 imgs = torch.empty(len(h5fp.keys()), 1024, device=self.device)
                 for i, key in enumerate(h5fp.keys()):
-                    imgs[i] = torch.tensor(h5fp[key], device=self.device)
+                    imgs[i] = torch.tensor(h5fp[key], device=self.device).squeeze()
 
             yield imgs, lbl
 
