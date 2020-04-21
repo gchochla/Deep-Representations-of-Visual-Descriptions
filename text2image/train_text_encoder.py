@@ -9,7 +9,7 @@ import torch
 import torch.optim as optim
 
 from text2image.utils import CUBDataset, joint_embedding_loss, model_name, Fvt
-from text2image.encoders import ConvolutionalLSTM
+from text2image.encoders import HybridCNN
 
 def train_text_encoder():
     '''Main'''
@@ -53,14 +53,23 @@ def train_text_encoder():
     parser.add_argument('-rn', '--rnn_num_layers', type=int, required=True,
                         help='number of layers in rnn')
 
+    parser.add_argument('-rh', '--rnn_hidden_size', type=int, default=256,
+                        help='size of rnn hidden state (including bidirectionality)')
+
     parser.add_argument('-rb', '--rnn_bidir', default=False, action='store_true',
                         help='whether to use bidirectional rnn')
+
+    parser.add_argument('--lstm', default=False, action='store_true',
+                        help='whether to use lstm instead of vanilla rnn')
 
     parser.add_argument('-cd', '--conv_dropout', type=float, default=0.,
                         help='dropout in convolutional layers')
 
     parser.add_argument('-rd', '--rnn_dropout', type=float, default=0.,
-                        help='dropout in lstm cells')
+                        help='dropout in rnn cells')
+
+    parser.add_argument('-ld', '--lin_dropout', type=float, default=0.,
+                        help='dropout in final embedding mapper')
 
     parser.add_argument('-b', '--batches', required=True, type=int,
                         help='number of batches')
@@ -89,12 +98,13 @@ def train_text_encoder():
                           text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
                           device=args.device, minibatch_size=args.minibatch_size)
 
-    txt_encoder = ConvolutionalLSTM(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
-                                    conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
-                                    rnn_bidir=args.rnn_bidir, conv_dropout=args.conv_dropout,
-                                    rnn_dropout=args.rnn_dropout, rnn_num_layers=args.rnn_num_layers,
-                                    rnn_hidden_size=1024 if not args.rnn_bidir else 512)\
-                                        .to(args.device).train()
+    txt_encoder = HybridCNN(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
+                            conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
+                            rnn_bidir=args.rnn_bidir, conv_dropout=args.conv_dropout,
+                            lin_dropout=args.lin_dropout, rnn_dropout=args.rnn_dropout,
+                            rnn_hidden_size=args.rnn_hidden_size//(1 + int(args.rnn_bidir)),
+                            rnn_num_layers=args.rnn_num_layers, lstm=args.lstm)\
+                                .to(args.device).train()
 
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
     if args.lr_decay:

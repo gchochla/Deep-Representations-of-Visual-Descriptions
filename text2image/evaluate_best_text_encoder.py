@@ -8,7 +8,7 @@ import argparse
 import torch
 
 from text2image.utils import CUBDataset, Fvt, model_name, get_hyperparameters_from_entry
-from text2image.encoders import ConvolutionalLSTM
+from text2image.encoders import HybridCNN
 
 def test_best():
     '''Main'''
@@ -68,11 +68,11 @@ def test_best():
                          text_cutoff=args.text_cutoff, level=margs.level, vocab_fn=args.vocab_fn,
                          device=args.device)
 
-    txt_encoder = ConvolutionalLSTM(vocab_dim=evalset.vocab_len, conv_channels=margs.conv_channels,
-                                    conv_kernels=margs.conv_kernels, conv_strides=margs.conv_strides,
-                                    rnn_num_layers=margs.rnn_num_layers, rnn_bidir=margs.rnn_bidir,
-                                    rnn_hidden_size=1024 if not margs.rnn_bidir else 512)\
-                                        .to(args.device).eval()
+    txt_encoder = HybridCNN(vocab_dim=evalset.vocab_len, conv_channels=margs.conv_channels,
+                            conv_kernels=margs.conv_kernels, conv_strides=margs.conv_strides,
+                            rnn_num_layers=margs.rnn_num_layers, rnn_bidir=margs.rnn_bidir,
+                            rnn_hidden_size=margs.rnn_hidden_size//(1+int(margs.rnn_bidir)),
+                            lstm=margs.lstm).to(args.device).eval()
     txt_encoder.load_state_dict(torch.load(model_name(margs)))
 
     mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024, device=args.device)
