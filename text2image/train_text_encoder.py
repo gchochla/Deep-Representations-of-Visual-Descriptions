@@ -89,9 +89,15 @@ def train_text_encoder():
                         help='device to execute on')
 
     parser.add_argument('-pe', '--print_every', type=int,
-                        help='print accuracy of batch in regular intervals')
+                        help='print accuracy of batch periodically')
+
+    parser.add_argument('-se', '--save_every', type=int,
+                        help='save model periodically. Note that' + \
+                            ' all copies are preserved, so use with caution')
 
     args = parser.parse_args()
+
+    assert args.save_every is None or args.model_dir is not None
 
     trainset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
                           image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
@@ -111,7 +117,12 @@ def train_text_encoder():
         # keep value closer to 1 than usual because of no solid def of epoch
         lr_decay = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda b: 0.9997)
 
-    for batch in range(args.batches):
+    if args.model_dir:
+        if not os.path.exists(args.model_dir):
+            os.makedirs(args.model_dir)
+
+    total_batches = args.batches
+    for batch in range(total_batches):
         img_embs, txts, lbls = trainset.get_next_minibatch()
         txt_embs = txt_encoder(txts)
 
@@ -131,11 +142,15 @@ def train_text_encoder():
                 .sum().item()
             print(f'Batch {batch+1} loss {loss.item():.4f}, accuracy: {corr}/{comp.size(0)}')
 
+        if args.save_every is not None and (batch + 1) % args.save_every == 0:
+            # note that assertion ensures model_dir
+            args.batches = batch + 1 # NOTE: remove this line to save to the same file each time
+            torch.save(txt_encoder.state_dict(), model_name(args))
+
     print('Done training')
 
     if args.model_dir:
-        if not os.path.exists(args.model_dir):
-            os.makedirs(args.model_dir)
+        args.batches = total_batches
         torch.save(txt_encoder.state_dict(), model_name(args))
 
 if __name__ == '__main__':
