@@ -73,7 +73,7 @@ def test_best():
                             rnn_num_layers=margs.rnn_num_layers, rnn_bidir=margs.rnn_bidir,
                             rnn_hidden_size=margs.rnn_hidden_size//(1+int(margs.rnn_bidir)),
                             lstm=margs.lstm).to(args.device).eval()
-    txt_encoder.load_state_dict(torch.load(model_name(margs)))
+    txt_encoder.load_state_dict(torch.load(model_name(margs), map_location=args.device))
 
     mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024, device=args.device)
     with torch.no_grad():

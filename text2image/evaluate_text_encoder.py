@@ -102,7 +102,7 @@ def evaluate_text_encoder():
                             rnn_bidir=args.rnn_bidir, rnn_num_layers=args.rnn_num_layers,
                             rnn_hidden_size=args.rnn_hidden_size//(1 + int(args.rnn_bidir)),
                             lstm=args.lstm).to(args.device).eval()
-    txt_encoder.load_state_dict(torch.load(model_name(args)))
+    txt_encoder.load_state_dict(torch.load(model_name(args), map_location=args.device))
 
     mean_txt_embs = torch.empty(len(evalset.avail_classes), 1024, device=args.device)
     with torch.no_grad():
