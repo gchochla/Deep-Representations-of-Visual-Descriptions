@@ -14,11 +14,6 @@ from torchvision.transforms import transforms
 
 from text2image.encoders import googlenet_feature_extractor
 
-def zeropad(digit, width=4):
-    '''Zero pad digit to keep sorted
-    in directory view'''
-    return '0' * (width - len(str(digit))) + str(digit)
-
 def embed(dataset_dir, image_dir, img_px, image_emb_dir, device, classes, train):
     '''Calculate the embeddings of images (given that the image encoder
     remains frozen during training) and save in .h5 format, where each image's
@@ -48,7 +43,6 @@ def embed(dataset_dir, image_dir, img_px, image_emb_dir, device, classes, train)
             clas_embs_fn = os.path.join(image_emb_dir, clas_dir) + '.h5'
 
             clas_ims = os.listdir(os.path.join(image_dir, clas_dir))
-            active_cnt = 0 # images could be grayscale, keep count of RGB ones
             with h5py.File(clas_embs_fn, 'w') as h5fp:
                 for clas_im in clas_ims:
                     img = Image.open(os.path.join(image_dir, clas_dir, clas_im))
@@ -84,7 +78,6 @@ def embed(dataset_dir, image_dir, img_px, image_emb_dir, device, classes, train)
                         if img.size(0) != 3:
                             continue
                         embs = img_encoder(img.unsqueeze(0)).squeeze()
-                        active_cnt += 1
 
                     if device.startswith('cuda'):
                         embs = embs.cpu()
