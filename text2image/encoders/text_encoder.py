@@ -26,20 +26,11 @@ class HybridCNN(nn.Module):
         super().__init__()
 
         # sanity checks
-        assert vocab_dim > 0
         assert hasattr(conv_channels, '__len__')
-        for i in conv_channels:
-            assert isinstance(i, int) and i > 0
         assert hasattr(conv_kernels, '__len__')
-        for i in conv_kernels:
-            assert isinstance(i, int) and i > 0
+        assert hasattr(conv_strides, '__len__')
         assert len(conv_channels) == len(conv_kernels)
         assert len(conv_channels) == len(conv_strides)
-        assert rnn_hidden_size > 0
-        assert rnn_num_layers > 0
-        assert 0 <= conv_dropout < 1
-        assert 0 <= rnn_dropout < 1
-        assert 0 <= lin_dropout < 1
         # make sure embedding dim is correct whether mapper is used or not
         assert map_to_emb or (rnn_hidden_size * (1 + int(rnn_bidir)) == emb_dim)
 
@@ -52,10 +43,9 @@ class HybridCNN(nn.Module):
                                        conv_kernels, conv_strides):
             self.conv_layers.append(
                 nn.Sequential(
-                    nn.Conv1d(in_ch, out_ch, k, bias=False),
-                    nn.BatchNorm1d(out_ch),
-                    nn.ReLU(),
+                    nn.Conv1d(in_ch, out_ch, k),
                     nn.MaxPool1d(s),
+                    nn.ReLU(),
                     nn.Dropout(conv_dropout)
                 )
             )
@@ -113,4 +103,42 @@ class HybridCNN(nn.Module):
         x = self.compute_mean_hidden(x[0])
         if self.map_to_emb:
             x = self.emb_mapper(x)
+        return x
+
+class TextCNN(nn.Module):
+
+    # pylint: disable=arguments-differ
+    # pylint: disable=invalid-name
+
+    '''Text-based CNN.'''
+
+    def __init__(self, vocab_dim, text_width, conv_channels, conv_kernels,
+                 conv_strides, emb_dim=1024):
+        '''Init TextCNN.'''
+
+        super().__init__()
+
+        conv_channels = [vocab_dim] + conv_channels
+
+        self.conv_layers = nn.ModuleList()
+        for in_ch, out_ch, k, s in zip(conv_channels[:-1], conv_channels[1:],
+                                       conv_kernels, conv_strides):
+            self.conv_layers.append(
+                nn.Sequential(
+                    nn.Conv1d(in_ch, out_ch, k),
+                    nn.MaxPool1d(s),
+                    nn.ReLU()
+                )
+            )
+
+            text_width = (text_width - k + 1) // s
+
+        self.emb_mapper = nn.Linear(conv_channels[-1] * text_width, emb_dim)
+
+    def forward(self, x):
+        '''Forward prop through text-based CNN.'''
+        for convl in self.conv_layers:
+            x = convl(x)
+        x = x.view(x.size(0), -1)
+        x = self.emb_mapper(x)
         return x
