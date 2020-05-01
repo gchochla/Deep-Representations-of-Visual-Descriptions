@@ -28,9 +28,6 @@ def train_text_encoder():
     parser.add_argument('-t', '--text_dir', required=True, type=str,
                         help='directory of descriptions w.r.t dataset directory')
 
-    parser.add_argument('-px', '--img_px', required=True, type=int,
-                        help='pixels for image to be resized to')
-
     parser.add_argument('-cut', '--text_cutoff', required=True, type=int,
                         help='fixed dimension of tokens of text')
 
@@ -100,7 +97,7 @@ def train_text_encoder():
     assert args.save_every is None or args.model_dir is not None
 
     trainset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
-                          image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
+                          image_dir=args.image_dir, text_dir=args.text_dir,
                           text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
                           device=args.device, minibatch_size=args.minibatch_size)
 

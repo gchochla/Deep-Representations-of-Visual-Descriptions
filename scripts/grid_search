@@ -6,7 +6,6 @@ valclasses_fn="valclasses.txt"
 testclasses_fn="testclasses.txt"
 image_dir="image_embs_h5"
 text_dir="captions"
-img_px="224"
 text_cutoff="201"
 level="char"
 vocab_fn="vocab_c10.t7"
@@ -40,7 +39,7 @@ for lr_decay in "${lr_decay_ar[@]}"; do
     "$lstm $rnn_bidir -lr $learning_rate $lr_decay"
 
     python text2image/train_text_encoder.py -d $dataset_dir \
-    -avc $trainclasses_fn -i $image_dir -t $text_dir -px $img_px \
+    -avc $trainclasses_fn -i $image_dir -t $text_dir \
     -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
     -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers $rnn_bidir \
     $lstm -ld $lin_dropout -cd $conv_dropout -rd $rnn_dropout -b $batches \
@@ -50,7 +49,7 @@ for lr_decay in "${lr_decay_ar[@]}"; do
     "-cs $conv_strides $lstm $rnn_bidir -lr $learning_rate $lr_decay"
 
     python text2image/evaluate_text_encoder.py -d $dataset_dir \
-    -avc $valclasses_fn -i $image_dir -t $text_dir -px $img_px \
+    -avc $valclasses_fn -i $image_dir -t $text_dir \
     -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
     -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers $rnn_bidir \
     $lstm -cd $conv_dropout -rd $rnn_dropout -ld $lin_dropout -b $batches \
@@ -67,5 +66,5 @@ done
 echo "Evaluating best model on test"
 
 python text2image/evaluate_best_text_encoder.py -d $dataset_dir \
--avc $testclasses_fn -i $image_dir -t $text_dir -px $img_px \
--cut $text_cutoff -v $vocab_fn -md $model_dir -dev $device -s $summary -c
+-avc $testclasses_fn -i $image_dir -t $text_dir -cut $text_cutoff \
+-v $vocab_fn -md $model_dir -dev $device -s $summary -c
