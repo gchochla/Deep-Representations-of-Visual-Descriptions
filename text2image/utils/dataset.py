@@ -6,6 +6,7 @@
 __all__ = ['CUBDataset']
 
 import os
+import string
 import torch
 # import torchvision.transforms as transforms
 import torchfile
@@ -42,7 +43,8 @@ class CUBDataset(torch.utils.data.Dataset):
             self.split = lambda s: list(filter(
                 lambda ss: ss, # remove empty strings, Nones, etc...
                 map(
-                    lambda ss: ss.translate(str.maketrans('', '', string.punctuation)), s.split()
+                    lambda ss: ss.translate(str.maketrans('', '', string.punctuation)),
+                    s.split()
                 )
             )) # split text by spaces, remove punctuation and blanks -> words
 
