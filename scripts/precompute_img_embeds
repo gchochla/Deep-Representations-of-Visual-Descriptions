@@ -7,14 +7,14 @@ train_classes="trainclasses.txt"
 test_classes_ar="valclasses.txt testclasses.txt"
 device="cpu"
 
-echo "python text2image/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir" \
+echo "python crnns4captions/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir" \
 "-dev $device -cls $train_classes --train"
-python text2image/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir \
+python crnns4captions/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir \
 -dev $device -cls $train_classes --train
 
 for test_classes in $test_classes_ar; do
-    echo "python text2image/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir" \
+    echo "python crnns4captions/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir" \
     "-dev $device -cls $test_classes"
-    python text2image/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir \
+    python crnns4captions/embeddings.py -emb -d $dataset_dir -i $image_dir -ied $image_emb_dir \
     -dev $device -cls $test_classes
 done

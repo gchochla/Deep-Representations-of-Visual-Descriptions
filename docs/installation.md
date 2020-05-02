@@ -11,8 +11,8 @@
 1. Clone repo:
 
     ```console
-    $ git clone https://github.com/https://github.com/gchochla/Text-to-Image-Synthesis text2image
-    $ cd text2image
+    $ git clone https://github.com/gchochla/CRNNs-for-Visual-Descriptions crnns4captions
+    $ cd crnns4captions
     ```
 
 1. Register commit hooks:

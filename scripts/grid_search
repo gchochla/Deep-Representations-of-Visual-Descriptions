@@ -38,7 +38,7 @@ for lr_decay in "${lr_decay_ar[@]}"; do
     echo "Training -ch $conv_channels -k $conv_kernels -cs $conv_strides" \
     "$lstm $rnn_bidir -lr $learning_rate $lr_decay"
 
-    python text2image/train_text_encoder.py -d $dataset_dir \
+    python crnns4captions/train_text_encoder.py -d $dataset_dir \
     -avc $trainclasses_fn -i $image_dir -t $text_dir \
     -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
     -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers $rnn_bidir \
@@ -48,7 +48,7 @@ for lr_decay in "${lr_decay_ar[@]}"; do
     echo "Evaluating on validation -ch $conv_channels -k $conv_kernels" \
     "-cs $conv_strides $lstm $rnn_bidir -lr $learning_rate $lr_decay"
 
-    python text2image/evaluate_text_encoder.py -d $dataset_dir \
+    python crnns4captions/evaluate_text_encoder.py -d $dataset_dir \
     -avc $valclasses_fn -i $image_dir -t $text_dir \
     -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
     -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers $rnn_bidir \
@@ -65,6 +65,6 @@ done
 
 echo "Evaluating best model on test"
 
-python text2image/evaluate_best_text_encoder.py -d $dataset_dir \
+python crnns4captions/evaluate_best_text_encoder.py -d $dataset_dir \
 -avc $testclasses_fn -i $image_dir -t $text_dir -cut $text_cutoff \
 -v $vocab_fn -md $model_dir -dev $device -s $summary -c

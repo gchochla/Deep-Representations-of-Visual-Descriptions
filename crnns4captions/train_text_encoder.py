@@ -8,8 +8,8 @@ import argparse
 import torch
 import torch.optim as optim
 
-from text2image.utils import CUBDataset, joint_embedding_loss, model_name, Fvt
-from text2image.encoders import HybridCNN
+from crnns4captions.utils import CUBDataset, joint_embedding_loss, model_name, Fvt
+from crnns4captions.encoders import HybridCNN
 
 def train_text_encoder():
     '''Main'''

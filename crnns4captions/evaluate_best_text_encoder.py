@@ -7,8 +7,8 @@ import argparse
 
 import torch
 
-from text2image.utils import CUBDataset, Fvt, model_name, get_hyperparameters_from_entry
-from text2image.encoders import HybridCNN
+from crnns4captions.utils import CUBDataset, Fvt, model_name, get_hyperparameters_from_entry
+from crnns4captions.encoders import HybridCNN
 
 def test_best():
     '''Main'''

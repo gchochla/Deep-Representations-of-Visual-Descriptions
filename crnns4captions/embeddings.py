@@ -12,7 +12,7 @@ import h5py
 
 from torchvision.transforms import transforms
 
-from text2image.encoders import googlenet_feature_extractor
+from crnns4captions.encoders import googlenet_feature_extractor
 
 def embed(dataset_dir, image_dir, img_px, image_emb_dir, device, classes, train):
     '''Calculate the embeddings of images (given that the image encoder

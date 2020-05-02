@@ -7,8 +7,8 @@ import argparse
 
 import torch
 
-from text2image.utils import CUBDataset, Fvt, hyperparameters, model_name
-from text2image.encoders import HybridCNN
+from crnns4captions.utils import CUBDataset, Fvt, hyperparameters, model_name
+from crnns4captions.encoders import HybridCNN
 
 def evaluate_text_encoder():
     '''Main'''
