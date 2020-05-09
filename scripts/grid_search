@@ -1,23 +1,20 @@
 #!/bin/bash
 
-dataset_dir="../../datasets/CUB_200_2011_wTEXT"
+dataset_dir="../../datasets/cvpr2016_cub"
 trainclasses_fn="trainclasses.txt"
 valclasses_fn="valclasses.txt"
 testclasses_fn="testclasses.txt"
-image_dir="image_embs_h5"
-text_dir="captions"
-text_cutoff="201"
-level="char"
-vocab_fn="vocab_c10.t7"
-conv_channels_ar=("100 150 200" "312 514 256")
+image_dir="images"
+text_dir="text_c10"
+conv_channels_ar=("100 150 200" "382 514 256")
 conv_kernels_ar=("3 3 3" "5 5 5" "7 7 7")
 conv_strides_ar=("3 3 3" "4 4 4")
 rnn_num_layers="2"
 rnn_bidir_ar=("" "-rb")
 lstm_ar=("" "--lstm")
 conv_dropout_ar="0. 0.05"
-rnn_dropout_ar="0.1 0.3"
-lin_dropout_ar="0.1 0.3"
+rnn_dropout_ar="0 0.1 0.3"
+lin_dropout_ar="0 0.1 0.3"
 batches="30000"
 learning_rate_ar="0.0007 0.0001 0.00001"
 lr_decay_ar=("" "-lrd")
@@ -40,9 +37,8 @@ for lr_decay in "${lr_decay_ar[@]}"; do
 
     python crnns4captions/train_text_encoder.py -d $dataset_dir \
     -avc $trainclasses_fn -i $image_dir -t $text_dir \
-    -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
-    -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers $rnn_bidir \
-    $lstm -ld $lin_dropout -cd $conv_dropout -rd $rnn_dropout -b $batches \
+    -ch $conv_channels -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers \
+    $rnn_bidir $lstm -ld $lin_dropout -cd $conv_dropout -rd $rnn_dropout -b $batches \
     -lr $learning_rate $lr_decay -md $model_dir -dev $device -pe 50
 
     echo "Evaluating on validation -ch $conv_channels -k $conv_kernels" \
@@ -50,9 +46,8 @@ for lr_decay in "${lr_decay_ar[@]}"; do
 
     python crnns4captions/evaluate_text_encoder.py -d $dataset_dir \
     -avc $valclasses_fn -i $image_dir -t $text_dir \
-    -cut $text_cutoff -lvl $level -v $vocab_fn -ch $conv_channels \
-    -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers $rnn_bidir \
-    $lstm -cd $conv_dropout -rd $rnn_dropout -ld $lin_dropout -b $batches \
+    -ch $conv_channels -k $conv_kernels -cs $conv_strides -rn $rnn_num_layers \
+    $rnn_bidir $lstm -cd $conv_dropout -rd $rnn_dropout -ld $lin_dropout -b $batches \
     -lr $learning_rate $lr_decay -md $model_dir -s $summary -dev $device
 done
 done
@@ -66,5 +61,4 @@ done
 echo "Evaluating best model on test"
 
 python crnns4captions/evaluate_best_text_encoder.py -d $dataset_dir \
--avc $testclasses_fn -i $image_dir -t $text_dir -cut $text_cutoff \
--v $vocab_fn -md $model_dir -dev $device -s $summary -c
+-avc $testclasses_fn -i $image_dir -t $text_dir -md $model_dir -dev $device -s $summary -c

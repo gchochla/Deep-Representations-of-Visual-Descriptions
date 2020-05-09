@@ -7,7 +7,7 @@ import argparse
 
 import torch
 
-from crnns4captions.utils import CUBDataset, Fvt, model_name, get_hyperparameters_from_entry
+from crnns4captions.utils import CUBDatasett7, Fvt, model_name, get_hyperparameters_from_entry
 from crnns4captions.encoders import HybridCNN
 
 def test_best():
@@ -27,15 +27,6 @@ def test_best():
     parser.add_argument('-t', '--text_dir', required=True, type=str,
                         help='directory of descriptions w.r.t detaset directory')
 
-    parser.add_argument('-px', '--img_px', required=True, type=int,
-                        help='pixels for image to be resized to')
-
-    parser.add_argument('-cut', '--text_cutoff', required=True, type=int,
-                        help='fixed dimension of tokens of text')
-
-    parser.add_argument('-v', '--vocab_fn', type=str,
-                        help='vocabulary filename w.r.t dataset directory.' + \
-                            'Used only when level=word')
 
     parser.add_argument('-md', '--model_dir', type=str, required=True,
                         help='where to retrieve model\'s parameters')
@@ -63,10 +54,8 @@ def test_best():
     margs = get_hyperparameters_from_entry(best[1])
     setattr(margs, 'model_dir', args.model_dir)
 
-    evalset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
-                         image_dir=args.image_dir, text_dir=args.text_dir, img_px=args.img_px,
-                         text_cutoff=args.text_cutoff, level=margs.level, vocab_fn=args.vocab_fn,
-                         device=args.device)
+    evalset = CUBDatasett7(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
+                           image_dir=args.image_dir, text_dir=args.text_dir, device=args.device)
 
     txt_encoder = HybridCNN(vocab_dim=evalset.vocab_len, conv_channels=margs.conv_channels,
                             conv_kernels=margs.conv_kernels, conv_strides=margs.conv_strides,

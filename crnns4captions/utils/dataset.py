@@ -3,7 +3,7 @@
 # pylint: disable=no-member
 # pylint: disable=not-callable
 
-__all__ = ['CUBDataset']
+__all__ = ['CUBDataset', 'CUBDatasett7']
 
 import os
 import string
@@ -168,77 +168,120 @@ class CUBDataset(torch.utils.data.Dataset):
 
         return res
 
-    # def get_next_minibatch(self, n_txts=1):
-    #     '''Get next training batch as suggested in
-    #     `Learning Deep Representations of Fine-Grained Visual Descriptions`, i.e.
-    #     one image with `n_txts` matching descriptions is returned from every class along
-    #     with their labels.'''
+class CUBDatasett7(torch.utils.data.Dataset):
 
-    #     def jitter(img):
-    #         '''Randomly flip and crop image `PIL.Image img`.'''
-    #         wdt, hgt = img.size
-    #         flip = bool(torch.randint(2, (1,)).item())
-    #         crop = torch.randint(5, (1,)).item()
-    #         crop = [
-    #             (0, 0, int(wdt*0.8), int(hgt*0.8)), (int(wdt*0.2), 0, wdt, int(hgt*0.8)),
-    #             (0, int(hgt*0.2), int(wdt*0.8), hgt), (int(wdt*0.2), int(hgt*0.2), wdt, hgt),
-    #             (int(wdt*0.1), int(hgt*0.1), int(wdt*0.9), int(hgt*0.9))
-    #         ][crop]
+    # pylint: disable=abstract-method
+    # pylint: disable=too-many-instance-attributes
 
-    #         if flip:
-    #             img = img.transpose(Image.FLIP_LEFT_RIGHT)
-    #         return img.crop(crop).resize((self.image_px,)*2)
+    '''CUB-200-2011 dataset.'''
+    def __init__(self, dataset_dir: str, avail_class_fn: str, image_dir: str,
+                 text_dir: str, device='cuda:0', **kwargs):
 
-    #     assert 1 <= n_txts <= 10
+        # pylint: disable=too-many-arguments
 
-    #     imgs = torch.empty(self.minibatch_size, 3, self.image_px, self.image_px,
-    #                        device=self.device)
-    #     txts = torch.empty(self.minibatch_size, n_txts, self.vocab_len,
-    #                        self.text_cutoff, device=self.device)
-    #     lbls = torch.empty(self.minibatch_size, dtype=int, device=self.device)
+        '''Initialize dataset.'''
 
-    #     pil2tensor = transforms.ToTensor()
-    #     rand_class_ind = torch.randperm(len(self.avail_classes))[:self.minibatch_size]
-    #     for i, class_ind in enumerate(rand_class_ind):
-    #         clas = self.avail_classes[class_ind]
+        super().__init__()
 
-    #         lbl = int(clas.split('.')[0])
+        # alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
+        self.vocab_len = 70
 
-    #         img_fns = os.listdir(os.path.join(self.dataset_dir, self.image_dir, clas))
-    #         rand_im = torch.randint(len(img_fns), (1,)).item()
-    #         rand_txts = torch.randperm(10)[:n_txts] + 1
+        self.avail_classes = [] # classes to read from
+        with open(os.path.join(dataset_dir, avail_class_fn), 'r') as avcls:
+            while True:
+                line = avcls.readline()
+                if not line:
+                    break
+                self.avail_classes.append(line.strip())
 
-    #         sample_fn = img_fns[rand_im]
-    #         txt_fn = os.path.splitext(sample_fn)[0] + '.h5'
+        self.dataset_dir = dataset_dir
+        self.image_dir = image_dir
+        self.text_dir = text_dir
+        self.device = device
 
-    #         img = Image.open(os.path.join(self.dataset_dir, self.image_dir,
-    #                                       clas, sample_fn))
-    #         txtobj = h5py.File(os.path.join(self.dataset_dir, self.text_dir,
-    #                                         clas, txt_fn), 'r')
-    #         for j, rand_txt in enumerate(rand_txts):
-    #             txt = txtobj['txt' + str(rand_txt.item())]
-    #             txt = self.process_text(txt)
-    #             txts[i, j] = txt
+        # number of classes to return
+        if 'minibatch_size' in kwargs and kwargs['minibatch_size'] > 1:
+            self.minibatch_size = min(kwargs['minibatch_size'], len(self.avail_classes))
+        else:
+            self.minibatch_size = len(self.avail_classes)
 
-    #         imgs[i] = pil2tensor(jitter(img))
-    #         lbls[i] = lbl
+    def get_captions(self):
+        '''Creates generator that yields one class' captions at a time in a
+        `torch.Tensor` of size `images`x`10`x`vocabulary_size`x`caption_max_size`.
+        Label is also returned.'''
 
-    #     return imgs, txts.squeeze(), lbls
+        for clas in self.avail_classes:
+            lbl = int(clas.split('.')[0])
 
-    # def get_images(self):
-    #     '''Creates generator that yields one class' images at a time in a
-    #     `torch.Tensor`. Label is also returned.'''
+            txt_fn = os.path.join(self.dataset_dir, self.text_dir, clas + '.t7')
+            txt_np = torchfile.load(txt_fn)
+            txt_t = self.process_text(txt_np)
 
-    #     for clas in self.avail_classes:
-    #         lbl = int(clas.split('.')[0])
+            yield txt_t, lbl
 
-    #         img_fns = os.listdir(os.path.join(self.dataset_dir, self.image_dir, clas))
-    #         clas_imgs = torch.empty(len(img_fns), 3, self.image_px, self.image_px,
-    #                                 device=self.device)
+    def get_images(self):
+        '''Creates generator that yields one class' image embeddings
+        at a time in a `torch.Tensor`. Label is also returned.'''
 
-    #         for i, img_fn in enumerate(img_fns):
-    #             img = Image.open(os.path.join(self.dataset_dir, self.image_dir,
-    #                                           clas, img_fn)).resize((self.image_px,)*2)
-    #             clas_imgs[i] = transforms.ToTensor()(img)
+        for clas in self.avail_classes:
+            lbl = int(clas.split('.')[0])
 
-    #         yield clas_imgs, lbl
+            imgs_fn = os.path.join(self.dataset_dir, self.image_dir, clas + '.t7')
+            imgs_np = torchfile.load(imgs_fn)
+            # the original image is used during inference -> index 0
+            imgs_t = torch.tensor(imgs_np[..., 0], device=self.device)
+
+            yield imgs_t, lbl
+
+
+    def get_next_minibatch(self, n_txts=1):
+        '''Get next training batch as suggested in
+        `Learning Deep Representations of Fine-Grained Visual Descriptions`, i.e.
+        one image's embeddings with `n_txts` matching descriptions is returned from
+        every class along with their labels.'''
+
+        assert 1 <= n_txts <= 10
+
+        imgs = torch.empty(self.minibatch_size, 1024, device=self.device)
+        txts = torch.empty(self.minibatch_size, n_txts, self.vocab_len,
+                           201, device=self.device)
+        lbls = torch.empty(self.minibatch_size, dtype=int, device=self.device)
+
+        rand_class_ind = torch.randperm(len(self.avail_classes))[:self.minibatch_size]
+        for i, class_ind in enumerate(rand_class_ind):
+            clas = self.avail_classes[class_ind]
+
+            lbl = int(clas.split('.')[0])
+
+            img_fn = os.path.join(self.dataset_dir, self.image_dir, clas + '.t7')
+            img_np = torchfile.load(img_fn)
+            # pick an image from the class at rand
+            rand_img = torch.randint(img_np.shape[0], (1,)).item()
+            # pick a crop at rand
+            rand_crop = torch.randint(10, (1,)).item()
+
+            txt_fn = os.path.join(self.dataset_dir, self.text_dir, clas + '.t7')
+            txt_np = torchfile.load(txt_fn)
+            # get n_txts random texts
+            rand_txts = torch.randperm(10)[:n_txts]
+
+            imgs[i] = torch.tensor(img_np[rand_img, ..., rand_crop], device=self.device)
+            # reshape because process text expects 3d
+            txts[i] = self.process_text(txt_np[rand_img, ..., rand_txts].reshape(1, 201, len(rand_txts)))
+            lbls[i] = lbl
+
+        return imgs, txts.squeeze(), lbls
+
+    def process_text(self, text):
+        '''Transform array of ascii codes to one-hot sequence.'''
+
+        ohvec = torch.zeros(text.shape[0], text.shape[2], self.vocab_len, 
+                            text.shape[1], device=self.device)
+
+        for corr_img in range(text.shape[0]):
+            for cap in range(text.shape[2]):
+                for tok in range(text.shape[1]):
+                    # -1 because of lua indexing
+                    ohvec[corr_img, cap, int(text[corr_img, tok, cap])-1, tok] = 1
+
+        return ohvec

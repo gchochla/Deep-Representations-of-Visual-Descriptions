@@ -7,7 +7,7 @@ import argparse
 
 import torch
 
-from crnns4captions.utils import CUBDataset, Fvt, hyperparameters, model_name
+from crnns4captions.utils import CUBDatasett7, Fvt, hyperparameters, model_name
 from crnns4captions.encoders import HybridCNN
 
 def evaluate_text_encoder():
@@ -26,16 +26,6 @@ def evaluate_text_encoder():
 
     parser.add_argument('-t', '--text_dir', required=True, type=str,
                         help='directory of descriptions w.r.t dataset directory')
-
-    parser.add_argument('-cut', '--text_cutoff', required=True, type=int,
-                        help='fixed dimension of tokens of text')
-
-    parser.add_argument('-lvl', '--level', default='char', type=str, choices=['char', 'word'],
-                        help='level of temporal resolution')
-
-    parser.add_argument('-v', '--vocab_fn', type=str,
-                        help='vocabulary filename w.r.t dataset directory.' + \
-                            'Used only when level=word')
 
     parser.add_argument('-ch', '--conv_channels', nargs='*', type=int, required=True,
                         help='convolution channels')
@@ -89,10 +79,8 @@ def evaluate_text_encoder():
 
     args = parser.parse_args()
 
-    evalset = CUBDataset(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
-                         image_dir=args.image_dir, text_dir=args.text_dir,
-                         text_cutoff=args.text_cutoff, level=args.level, vocab_fn=args.vocab_fn,
-                         device=args.device)
+    evalset = CUBDatasett7(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
+                           image_dir=args.image_dir, text_dir=args.text_dir, device=args.device)
 
     txt_encoder = HybridCNN(vocab_dim=evalset.vocab_len, conv_channels=args.conv_channels,
                             conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
