@@ -229,7 +229,7 @@ class CUBDatasett7(torch.utils.data.Dataset):
             imgs_fn = os.path.join(self.dataset_dir, self.image_dir, clas + '.t7')
             imgs_np = torchfile.load(imgs_fn)
             # the original image is used during inference -> index 0
-            imgs_t = torch.tensor(imgs_np[..., 0], device=self.device)
+            imgs_t = torch.tensor(imgs_np[..., 0], dtype=torch.float, device=self.device)
 
             yield imgs_t, lbl
 
