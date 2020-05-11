@@ -40,7 +40,7 @@ def get_hyperparameters_from_entry(name: str):
         elif attr in ('conv_channels', 'conv_kernels', 'conv_strides'):
             value = list(map(int, value.split('-')))
         elif attr in ('rnn_bidir', 'lr_decay', 'lstm'):
-            value = bool(value)
+            value = (value == 'True')
 
         setattr(obj, attr, value)
 
