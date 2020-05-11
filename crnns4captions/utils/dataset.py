@@ -3,7 +3,7 @@
 # pylint: disable=no-member
 # pylint: disable=not-callable
 
-__all__ = ['CUBDataset', 'CUBDatasett7']
+__all__ = ['CUBDataset', 'CUBDatasetLazy']
 
 import os
 import string
@@ -11,8 +11,6 @@ import torch
 # import torchvision.transforms as transforms
 import torchfile
 import h5py
-
-# from PIL import Image
 
 class CUBDataset(torch.utils.data.Dataset):
 
@@ -168,7 +166,7 @@ class CUBDataset(torch.utils.data.Dataset):
 
         return res
 
-class CUBDatasett7(torch.utils.data.Dataset):
+class CUBDatasetLazy(torch.utils.data.Dataset):
 
     # pylint: disable=abstract-method
     # pylint: disable=too-many-instance-attributes
@@ -179,7 +177,8 @@ class CUBDatasett7(torch.utils.data.Dataset):
 
         # pylint: disable=too-many-arguments
 
-        '''Initialize dataset.'''
+        '''Initialize dataset. Note that non lazy dirs are expected,
+        they will be used wherever necessary.'''
 
         super().__init__()
 
@@ -253,27 +252,28 @@ class CUBDatasett7(torch.utils.data.Dataset):
 
             lbl = int(clas.split('.')[0])
 
-            img_fn = os.path.join(self.dataset_dir, self.image_dir, clas + '.t7')
-            img_np = torchfile.load(img_fn)
-            # pick an image from the class at rand
-            rand_img = torch.randint(img_np.shape[0], (1,)).item()
-            # pick a crop at rand
-            rand_crop = torch.randint(10, (1,)).item()
+            img_fn = os.path.join(self.dataset_dir, self.image_dir + '_lazy', clas + '.h5')
+            with h5py.File(img_fn, 'r') as h5fp:
+                # pick an image from the class at rand
+                rand_img = str(torch.randint(len(h5fp), (1,)).item())
+                # pick a crop at rand
+                rand_crop = torch.randint(10, (1,)).item()
+                imgs[i] = torch.tensor(h5fp[rand_img][..., rand_crop], device=self.device)
 
-            txt_fn = os.path.join(self.dataset_dir, self.text_dir, clas + '.t7')
-            txt_np = torchfile.load(txt_fn)
-            # get n_txts random texts
-            rand_txts = torch.randperm(10)[:n_txts]
 
-            imgs[i] = torch.tensor(img_np[rand_img, ..., rand_crop], device=self.device)
-            # reshape because process text expects 3d
-            txts[i] = self.process_text(txt_np[rand_img, ..., rand_txts].reshape(1, 201, len(rand_txts)))
+            txt_fn = os.path.join(self.dataset_dir, self.text_dir + '_lazy', clas + '.h5')
+            with h5py.File(txt_fn, 'r') as h5fp:
+                # get n_txts random texts
+                rand_txts = torch.randperm(10)[:n_txts]
+                # reshape because process text expects 3d
+                txts[i] = self.process_text(h5fp[rand_img][..., rand_txts].reshape(1, 201, len(rand_txts)))
+
             lbls[i] = lbl
 
         return imgs, txts.squeeze(), lbls
 
     def process_text(self, text):
-        '''Transform array of ascii codes to one-hot sequence.'''
+        '''Transform np array of ascii codes to one-hot sequence.'''
 
         ohvec = torch.zeros(text.shape[0], text.shape[2], self.vocab_len, 
                             text.shape[1], device=self.device)

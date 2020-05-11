@@ -8,7 +8,7 @@ import argparse
 import torch
 import torch.optim as optim
 
-from crnns4captions.utils import CUBDatasett7, joint_embedding_loss, model_name, Fvt
+from crnns4captions.utils import CUBDatasetLazy, joint_embedding_loss, model_name, Fvt
 from crnns4captions.encoders import HybridCNN
 
 def train_text_encoder():
@@ -86,9 +86,9 @@ def train_text_encoder():
 
     assert args.save_every is None or args.model_dir is not None
 
-    trainset = CUBDatasett7(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
-                            image_dir=args.image_dir, text_dir=args.text_dir, device=args.device,
-                            minibatch_size=args.minibatch_size)
+    trainset = CUBDatasetLazy(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
+                              image_dir=args.image_dir, text_dir=args.text_dir, device=args.device,
+                              minibatch_size=args.minibatch_size)
 
     txt_encoder = HybridCNN(vocab_dim=trainset.vocab_len, conv_channels=args.conv_channels,
                             conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,
@@ -100,8 +100,8 @@ def train_text_encoder():
 
     optimizer = optim.Adam(txt_encoder.parameters(), lr=args.learning_rate)
     if args.lr_decay:
-        # keep value closer to 1 than usual because of no solid def of epoch
-        lr_decay = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda b: 0.9997)
+        # epoch considered to be 200 minibatches in reedetal
+        lr_decay = optim.lr_scheduler.MultiplicativeLR(optimizer, lambda b: 0.98 if (b+1) % 200 == 0 else 1)
 
     if args.model_dir:
         if not os.path.exists(args.model_dir):

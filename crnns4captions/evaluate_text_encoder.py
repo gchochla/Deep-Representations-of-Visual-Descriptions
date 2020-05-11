@@ -7,7 +7,7 @@ import argparse
 
 import torch
 
-from crnns4captions.utils import CUBDatasett7, Fvt, hyperparameters, model_name
+from crnns4captions.utils import CUBDatasetLazy, Fvt, hyperparameters, model_name
 from crnns4captions.encoders import HybridCNN
 
 def evaluate_text_encoder():
@@ -79,8 +79,8 @@ def evaluate_text_encoder():
 
     args = parser.parse_args()
 
-    evalset = CUBDatasett7(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
-                           image_dir=args.image_dir, text_dir=args.text_dir, device=args.device)
+    evalset = CUBDatasetLazy(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
+                             image_dir=args.image_dir, text_dir=args.text_dir, device=args.device)
 
     txt_encoder = HybridCNN(vocab_dim=evalset.vocab_len, conv_channels=args.conv_channels,
                             conv_kernels=args.conv_kernels, conv_strides=args.conv_strides,

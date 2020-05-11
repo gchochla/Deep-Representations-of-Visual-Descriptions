@@ -7,7 +7,7 @@ import argparse
 
 import torch
 
-from crnns4captions.utils import CUBDatasett7, Fvt, model_name, get_hyperparameters_from_entry
+from crnns4captions.utils import CUBDatasetLazy, Fvt, model_name, get_hyperparameters_from_entry
 from crnns4captions.encoders import HybridCNN
 
 def test_best():
@@ -54,8 +54,8 @@ def test_best():
     margs = get_hyperparameters_from_entry(best[1])
     setattr(margs, 'model_dir', args.model_dir)
 
-    evalset = CUBDatasett7(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
-                           image_dir=args.image_dir, text_dir=args.text_dir, device=args.device)
+    evalset = CUBDatasetLazy(dataset_dir=args.dataset_dir, avail_class_fn=args.avail_class_fn,
+                             image_dir=args.image_dir, text_dir=args.text_dir, device=args.device)
 
     txt_encoder = HybridCNN(vocab_dim=evalset.vocab_len, conv_channels=margs.conv_channels,
                             conv_kernels=margs.conv_kernels, conv_strides=margs.conv_strides,

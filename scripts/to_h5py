@@ -1,0 +1,10 @@
+#!/bin/bash
+
+dataset_dir="../../datasets/cvpr2016_cub"
+image_dir="images"
+text_dir="text_c10"
+new_image_dir="images_lazy"
+new_text_dir="text_c10_lazy"
+
+python crnns4captions/trans_to_h5.py -d $dataset_dir -i $image_dir -t $text_c10 \
+-ni $new_image_dir -nt $new_text_dir
