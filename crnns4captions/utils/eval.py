@@ -24,20 +24,22 @@ def Fvt(x, y):
     return torch.matmul(x, y.transpose(-2, -1))
 
 def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
-    '''Compute loss across modality (image or text). The losses are defined as
-    (`Learning Deep Representations of Fine-Grained Visual Descriptions`):
+    '''Compute loss across modality (image or text). The losses slighlty differ from
+    `Learning Deep Representations of Fine-Grained Visual Descriptions` but are
+    the ones used for backpropagation in official repo, ref to
+    https://github.com/reedscot/cvpr2016/blob/7988b42f3c2e41b6f7dc6c9ff8020b8681581259/train_sje_hybrid.lua#L135:
 
-    l_v(v_n, t_n, y_n) = max_{y in labels}(0, D(y, y_n) + E_{t from T(y)}[F(v_n,t) - F[v_n,t_n]])
+    l_v(v_n, t_n, y_n) = mean_{y}max{(0, D(y, y_n)+E_{t from T(y)}[F(v_n,t) - F[v_n,t_n]])}
 
-    l_v(v_n, t_n, y_n) = max_{y in labels}(0, D(y, y_n) + E_{v from V(y)}[F(v,t_n) - F[v_n,t_n]])
+    l_v(v_n, t_n, y_n) = mean_{y}max{(0, D(y, y_n)+E_{v from V(y)}[F(v,t_n) - F[v_n,t_n]])}
 
     As suggested, only one pair per class is used, so the Expectation is approximated
     by the value of one sample. The implementation is fully vectorized. Notice that the labels
-    are not used as the D loss is zero in the diagonal if the class of an index between tensors
-    is the same. `dim` essentially controls the broadcasting dimensions, e.g. if `dim==0`, the
-    diagonal is unsqueezed to a row-vector and is therefore broadcasted by replicating the diagonal
-    elements column-wise, i.e. the "iteration" of classes concerns the modality differing between
-    rows.
+    are not used as the D loss is zero in the diagonal if the class of an index between image and
+    text embs is the same. `dim` essentially controls the broadcasting dimensions, e.g. if
+    `dim==0`, the diagonal is unsqueezed to a row-vector and is therefore broadcasted by
+    replicating the diagonal elements column-wise, i.e. the "iteration" of classes concerns
+    the modality differing between rows.
 
     Arguments:
 
@@ -56,7 +58,7 @@ def modality_loss(comp: torch.Tensor, dim: int, batched=False, device='cuda:0'):
     # size(1) is not concerned with the existence of batch dimension
     Dy = 1 - torch.eye(comp.size(1), device=device)
     comp_dif = comp - comp.diagonal(0, batched, batched+1).unsqueeze(dim+batched)
-    return F.relu(Dy + comp_dif).max(dim=dim+batched)[0].mean(dim=-1)
+    return F.relu(Dy + comp_dif).mean(dim=-1).mean(dim=-1) # do not include batch dim if exists
 
 def joint_embedding_loss(im_enc, txt_enc, _lbls, batched=False, device='cuda:0'):
     '''Compute and return loss as defined in
