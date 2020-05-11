@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='crnns4captions',
-    version='v0.2',
+    version='v1.0',
     packages=find_packages(),
     scripts=[],
     url='https://github.com/gchochla/Deep-Representations-of-Visual-Descriptions',
