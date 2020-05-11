@@ -20,7 +20,7 @@ To load pretrained character-level model on CUB:
 from crnns4captions.utils import load_best_model
 
 # model is returned in eval mode
-model = load_best_model('./models/', './model/experiments.txt', device='cuda:0')
+model = load_best_model('./models/', './models/experiments.txt', device='cuda:0')
 ```
 
 Alternatively, if you download the files locally without the rest of the repo, you can modify `crnns4captions/utils/load_best_model/load_best_model.py` by pasting the repo relative code in the file.
