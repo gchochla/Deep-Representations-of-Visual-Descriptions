@@ -14,16 +14,19 @@ Follow [these](./docs/installation.md) instructions.
 
 ## Usage
 
-To load pretrained character-level model on CUB:
+To load pretrained and use character-level model on CUB:
 
 ```python
-from crnns4captions.utils import load_best_model
+from crnns4captions.utils import load_best_model, captions_to_tensor
 
 # model is returned in eval mode
 model = load_best_model('./models/', './models/experiments.txt', device='cuda:0')
+captions = ['This bird has blue wings, a pointed red beak and long legs.', 'El pollo loco!']
+captions_tensor = captions_to_tensor(captions, device='cuda:0')
+reprs = model(captions_tensor) # torch.Size([2, 1024])
 ```
 
-Alternatively, if you download the files locally without the rest of the repo, you can modify `crnns4captions/utils/load_best_model/load_best_model.py` by pasting the repo relative code in the file.
+Alternatively, if you download the files locally without the rest of the repo, you can modify `crnns4captions/utils/deploy.py` by pasting the repo relative code in the file.
 
 ## Train & Evaluate
 

@@ -30,3 +30,15 @@ def load_best_model(model_dir, summary, device):
     txt_encoder.load_state_dict(torch.load(model_name(margs), map_location=device))
 
     return txt_encoder
+
+def captions_to_tensor(captions, device):
+    '''Properly transform input iterable of strings for the model.'''
+
+    alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-,;.!?:\'"/\\|_@#$%^&*~`+-=<>()[]{} '
+    # pylint: disable=no-member
+    text_t = torch.zeros(len(captions), len(alphabet), 201, device=device)
+    for i, caption in enumerate(captions):
+        for j, tok in enumerate(caption.lower()):
+            text_t[i, alphabet.index(tok), j] = 1
+
+    return text_t
