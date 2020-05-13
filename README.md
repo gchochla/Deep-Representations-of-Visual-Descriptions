@@ -29,20 +29,20 @@ Alternatively, if you download the files locally without the rest of the repo, y
 
 After installation:
 
-1. Make `scripts` executables.
+1. Make `scripts` executables:
 
-```console
-chmod +x scripts/*
-```
+    ```console
+    chmod +x scripts/*
+    ```
 
 1. Configure the paths in `scripts/to_h5py` and execute it to get h5 files for every t7 file in the CUB dataset (NOTE: do not overwrite the t7 files):
 
-```console
-scripts/to_h5py
-```
+    ```console
+    scripts/to_h5py
+    ```
 
 1. Change the hyperparameters configuration in `scripts/grid_search` (default: the ones suggested in original paper and the ones used in the pre-trained model) and run the grid_search:
 
-```console
-scripts/grid_search
-```
+    ```console
+    scripts/grid_search
+    ```
