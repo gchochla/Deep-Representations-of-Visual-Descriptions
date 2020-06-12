@@ -6,5 +6,5 @@ text_dir="text_c10"
 new_image_dir="images_lazy"
 new_text_dir="text_c10_lazy"
 
-python crnns4captions/trans_to_h5.py -d $dataset_dir -i $image_dir -t $text_c10 \
+python crnns4captions/trans_to_h5.py -d $dataset_dir -i $image_dir -t $text_dir \
 -ni $new_image_dir -nt $new_text_dir
