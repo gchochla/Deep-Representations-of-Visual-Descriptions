@@ -11,7 +11,7 @@
 1. Clone repo:
 
     ```console
-    $ git clone https://github.com/gchochla/CRNNs-for-Visual-Descriptions crnns4captions
+    $ git clone https://github.com/gchochla/Deep-Representations-of-Visual-Descriptions crnns4captions
     $ cd crnns4captions
     ```
 
